@@ -1,6 +1,6 @@
-# Helpdesk System (내부 업무 시스템 MVP+)
+# Helpdesk System (MVP+)
 
-민원/요청 처리 흐름을 다루는 **사이드 프로젝트**입니다.  
+민원/요청 처리 흐름을 다루는 **사이드 프로젝트**입니다. 학습/실험 목적의 프로젝트이며, 핵심 업무 흐름 검증에 집중했습니다.  
 핵심은 기능 과시가 아니라 **추적 가능성, 상태 일관성, 이력 관리**입니다.
 
 ## MVP 핵심 범위
@@ -33,7 +33,7 @@
 
 ### 1) 백엔드
 ```bash
-cd C:\Users\qjawn\helpdesk-system\backend
+cd backend
 npm install
 npx prisma generate
 npx prisma db push
@@ -44,7 +44,7 @@ npm run dev
 
 ### 2) 프론트엔드
 ```bash
-cd C:\Users\qjawn\helpdesk-system\frontend
+cd frontend
 npm install
 npm run dev
 ```
@@ -54,7 +54,7 @@ Vite 프록시(`/api`)를 통해 백엔드(`http://localhost:3000`)를 호출합
 
 ### 3) 테스트
 ```bash
-cd C:\Users\qjawn\helpdesk-system\backend
+cd backend
 npm test
 ```
 
@@ -75,10 +75,10 @@ npm test
 curl -H "x-role: REQUESTER" -H "x-user: user1" http://localhost:3000/api/tickets
 ```
 
-## 점검 시나리오
+## Usage Walkthrough
 - ADMIN: 등록 -> 상태변경 2회 -> 상세/이력 -> 통계
 - REQUESTER: 본인 티켓 조회 가능 + 상태변경 403 확인
-- 상세 시나리오 문서: `docs/03_demo.md`
+- 상세 사용 시나리오 문서: `docs/03_demo.md`
 
 ## 문서
 - `docs/00_scope.md`: 범위 정의
