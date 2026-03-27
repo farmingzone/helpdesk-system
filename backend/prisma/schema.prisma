@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  RECEIVED
+  IN_PROGRESS
+  DONE
+}
+
+enum EventType {
+  CREATED
+  STATUS_CHANGED
+}
+
+model Ticket {
+  id           String          @id @default(uuid())
+  title        String
+  description  String
+  requesterName String         @map("requester_name")
+  status       Status          @default(RECEIVED)
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  resolvedAt   DateTime?       @map("resolved_at")
+  histories    TicketHistory[]
+
+  @@index([status, createdAt])
+  @@index([resolvedAt])
+  @@map("tickets")
+}
+
+model TicketHistory {
+  id        String    @id @default(uuid())
+  ticketId  String    @map("ticket_id")
+  actorName String    @map("actor_name")
+  eventType EventType @map("event_type")
+  fromStatus Status?  @map("from_status")
+  toStatus  Status?   @map("to_status")
+  note      String?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_histories")
+}
