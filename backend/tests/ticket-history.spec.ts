@@ -4,7 +4,8 @@ import { prisma } from "../src/db/client";
 import {
   addCommentToTicket,
   changeTicketAssignee,
-  createTicket
+  createTicket,
+  getTicketListWithFilters
 } from "../src/modules/tickets/tickets.service";
 
 describe("Ticket history", () => {
@@ -74,5 +75,30 @@ describe("Ticket history", () => {
     expect(histories).toHaveLength(2);
     expect(histories[1].eventType).toBe(EventType.ASSIGNEE_CHANGED);
     expect(histories[1].note).toContain("assignee:");
+  });
+
+  it("creates OVERDUE_ESCALATED history once for overdue open ticket", async () => {
+    const ticket = await createTicket({
+      title: "Overdue escalation issue",
+      description: "Escalation history should be created once",
+      requesterName: "tester-h"
+    });
+
+    await prisma.ticket.update({
+      where: { id: ticket.id },
+      data: {
+        dueAt: new Date(Date.now() - 5 * 60 * 1000)
+      }
+    });
+
+    await getTicketListWithFilters({});
+    await getTicketListWithFilters({});
+
+    const histories = await prisma.ticketHistory.findMany({
+      where: { ticketId: ticket.id },
+      orderBy: { createdAt: "asc" }
+    });
+
+    expect(histories.filter((history) => history.eventType === EventType.OVERDUE_ESCALATED)).toHaveLength(1);
   });
 });
