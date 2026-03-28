@@ -213,3 +213,43 @@ export async function updateTicketAssigneeWithHistory(input: UpdateTicketAssigne
     return ticket;
   });
 }
+
+type CreateTicketAttachmentInput = {
+  ticketId: string;
+  originalName: string;
+  normalizedName: string;
+  mimeType: string;
+  sizeBytes: number;
+  storagePath: string;
+  uploadedBy: string;
+};
+
+export async function createTicketAttachment(input: CreateTicketAttachmentInput) {
+  return prisma.ticketAttachment.create({
+    data: {
+      ticketId: input.ticketId,
+      originalName: input.originalName,
+      normalizedName: input.normalizedName,
+      mimeType: input.mimeType,
+      sizeBytes: input.sizeBytes,
+      storagePath: input.storagePath,
+      uploadedBy: input.uploadedBy
+    }
+  });
+}
+
+export async function listTicketAttachments(ticketId: string) {
+  return prisma.ticketAttachment.findMany({
+    where: { ticketId },
+    orderBy: { createdAt: "desc" }
+  });
+}
+
+export async function findTicketAttachment(ticketId: string, attachmentId: string) {
+  return prisma.ticketAttachment.findFirst({
+    where: {
+      id: attachmentId,
+      ticketId
+    }
+  });
+}

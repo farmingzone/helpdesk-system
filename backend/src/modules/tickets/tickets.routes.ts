@@ -1,5 +1,6 @@
 import { Priority, Status } from "@prisma/client";
 import { Router } from "express";
+import multer from "multer";
 import { z } from "zod";
 import { canChangeStatus, getUserContext } from "../auth/auth";
 import {
@@ -7,8 +8,12 @@ import {
   changeTicketAssignee,
   changeTicketStatus,
   createTicket,
+  downloadTicketAttachmentWithAccess,
+  getAttachmentConstraints,
+  getTicketAttachmentsWithAccess,
   getTicketDetailWithAccess,
-  getTicketListWithFilters
+  getTicketListWithFilters,
+  uploadTicketAttachment
 } from "./tickets.service";
 
 const createTicketSchema = z.object({
@@ -33,6 +38,11 @@ const statusParamsSchema = z.object({
   ticketId: z.string().min(1)
 });
 
+const attachmentParamsSchema = z.object({
+  ticketId: z.string().min(1),
+  attachmentId: z.string().min(1)
+});
+
 const changeStatusSchema = z.object({
   toStatus: z.nativeEnum(Status),
   actorName: z.string().min(1),
@@ -51,6 +61,14 @@ const changeAssigneeSchema = z.object({
 });
 
 export const ticketsRouter = Router();
+
+const attachmentConstraints = getAttachmentConstraints();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: attachmentConstraints.maxSizeBytes
+  }
+});
 
 ticketsRouter.post("/", async (req, res, next) => {
   try {
@@ -102,6 +120,77 @@ ticketsRouter.get("/:ticketId", async (req, res, next) => {
     }
 
     return res.json(result.ticket);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+ticketsRouter.post("/:ticketId/attachments", upload.single("file"), async (req, res, next) => {
+  try {
+    const user = getUserContext(req);
+    const { ticketId } = statusParamsSchema.parse(req.params);
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Attachment file is required (field: file)" });
+    }
+
+    const result = await uploadTicketAttachment({
+      ticketId,
+      role: user.role,
+      userName: user.userName,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      sizeBytes: req.file.size,
+      fileBuffer: req.file.buffer
+    });
+
+    if (!result.ok) {
+      return res.status(result.code).json({ message: result.message });
+    }
+
+    return res.status(201).json(result.attachment);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+ticketsRouter.get("/:ticketId/attachments", async (req, res, next) => {
+  try {
+    const user = getUserContext(req);
+    const { ticketId } = statusParamsSchema.parse(req.params);
+    const result = await getTicketAttachmentsWithAccess(ticketId, user.role, user.userName);
+
+    if (!result.ok) {
+      return res.status(result.code).json({ message: result.message });
+    }
+
+    return res.json(result.attachments);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+ticketsRouter.get("/:ticketId/attachments/:attachmentId", async (req, res, next) => {
+  try {
+    const user = getUserContext(req);
+    const { ticketId, attachmentId } = attachmentParamsSchema.parse(req.params);
+    const result = await downloadTicketAttachmentWithAccess(
+      ticketId,
+      attachmentId,
+      user.role,
+      user.userName
+    );
+
+    if (!result.ok) {
+      return res.status(result.code).json({ message: result.message });
+    }
+
+    res.setHeader("Content-Type", result.attachment.mimeType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(result.attachment.normalizedName)}"`
+    );
+    return res.send(result.fileBuffer);
   } catch (err) {
     return next(err);
   }

@@ -39,6 +39,7 @@ model Ticket {
   updatedAt     DateTime        @updatedAt @map("updated_at")
   resolvedAt    DateTime?       @map("resolved_at")
   histories     TicketHistory[]
+  attachments   TicketAttachment[]
 
   @@index([status, createdAt])
   @@index([resolvedAt])
@@ -61,4 +62,21 @@ model TicketHistory {
 
   @@index([ticketId, createdAt])
   @@map("ticket_histories")
+}
+
+model TicketAttachment {
+  id             String   @id @default(uuid())
+  ticketId       String   @map("ticket_id")
+  originalName   String   @map("original_name")
+  normalizedName String   @map("normalized_name")
+  mimeType       String   @map("mime_type")
+  sizeBytes      Int      @map("size_bytes")
+  storagePath    String   @map("storage_path")
+  uploadedBy     String   @map("uploaded_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_attachments")
 }
