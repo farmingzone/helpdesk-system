@@ -4,6 +4,7 @@ import { z } from "zod";
 import { canChangeStatus, getUserContext } from "../auth/auth";
 import {
   addCommentToTicket,
+  changeTicketAssignee,
   changeTicketStatus,
   createTicket,
   getTicketDetailWithAccess,
@@ -14,6 +15,7 @@ const createTicketSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
   requesterName: z.string().min(1),
+  assigneeName: z.string().min(1).optional(),
   priority: z.nativeEnum(Priority).optional(),
   dueAt: z.string().datetime().optional()
 });
@@ -21,6 +23,7 @@ const createTicketSchema = z.object({
 const statusQuerySchema = z.object({
   status: z.nativeEnum(Status).optional(),
   requesterName: z.string().min(1).optional(),
+  assigneeName: z.string().min(1).optional(),
   q: z.string().min(1).optional(),
   priority: z.nativeEnum(Priority).optional(),
   overdueOnly: z.coerce.boolean().optional()
@@ -41,6 +44,12 @@ const addCommentSchema = z.object({
   note: z.string().min(1)
 });
 
+const changeAssigneeSchema = z.object({
+  actorName: z.string().min(1),
+  toAssigneeName: z.string().min(1).nullable(),
+  note: z.string().optional()
+});
+
 export const ticketsRouter = Router();
 
 ticketsRouter.post("/", async (req, res, next) => {
@@ -52,6 +61,7 @@ ticketsRouter.post("/", async (req, res, next) => {
     const ticket = await createTicket({
       ...body,
       requesterName,
+      assigneeName: user.role === "REQUESTER" ? undefined : body.assigneeName,
       dueAt: body.dueAt ? new Date(body.dueAt) : undefined
     });
     return res.status(201).json(ticket);
@@ -63,13 +73,14 @@ ticketsRouter.post("/", async (req, res, next) => {
 ticketsRouter.get("/", async (req, res, next) => {
   try {
     const user = getUserContext(req);
-    const { status, requesterName, q, priority, overdueOnly } = statusQuerySchema.parse(req.query);
+    const { status, requesterName, assigneeName, q, priority, overdueOnly } = statusQuerySchema.parse(req.query);
     const effectiveRequesterName =
       user.role === "REQUESTER" ? user.userName : requesterName;
 
     const tickets = await getTicketListWithFilters({
       status,
       requesterName: effectiveRequesterName,
+      assigneeName,
       query: q,
       priority,
       overdueOnly
@@ -137,6 +148,32 @@ ticketsRouter.patch("/:ticketId/status", async (req, res, next) => {
       ticketId,
       toStatus: body.toStatus,
       actorName: body.actorName,
+      note: body.note
+    });
+
+    if (!result.ok) {
+      return res.status(result.code).json({ message: result.message });
+    }
+
+    return res.json(result.ticket);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+ticketsRouter.patch("/:ticketId/assignee", async (req, res, next) => {
+  try {
+    const user = getUserContext(req);
+    if (!canChangeStatus(user.role)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const { ticketId } = statusParamsSchema.parse(req.params);
+    const body = changeAssigneeSchema.parse(req.body);
+    const result = await changeTicketAssignee({
+      ticketId,
+      actorName: body.actorName,
+      toAssigneeName: body.toAssigneeName,
       note: body.note
     });
 

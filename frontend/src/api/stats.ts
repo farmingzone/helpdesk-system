@@ -21,6 +21,9 @@ export type ResolutionSummary = {
   };
   todayCompletedCount: number;
   overdueCount: number;
+  unassignedOpenCount: number;
+  highPriorityOpenCount: number;
+  attentionOpenCount: number;
   dailyCompleted: Array<{ date: string; count: number }>;
 };
 

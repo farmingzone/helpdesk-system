@@ -1,4 +1,4 @@
-import { Status } from "@prisma/client";
+import { Priority, Status } from "@prisma/client";
 import { prisma } from "../../db/client";
 
 export async function getAverageResolutionTime() {
@@ -49,7 +49,8 @@ export async function getResolutionSummary() {
   const todayEnd = new Date(todayStart);
   todayEnd.setDate(todayEnd.getDate() + 1);
 
-  const [todayCompletedCount, overdueCount] = await Promise.all([
+  const [todayCompletedCount, overdueCount, unassignedOpenCount, highPriorityOpenCount] =
+    await Promise.all([
     prisma.ticket.count({
       where: {
         status: Status.DONE,
@@ -64,8 +65,31 @@ export async function getResolutionSummary() {
         dueAt: { lt: new Date() },
         status: { not: Status.DONE }
       }
+    }),
+    prisma.ticket.count({
+      where: {
+        assigneeName: null,
+        status: { not: Status.DONE }
+      }
+    }),
+    prisma.ticket.count({
+      where: {
+        priority: Priority.HIGH,
+        status: { not: Status.DONE }
+      }
     })
   ]);
+
+  const attentionOpenCount = await prisma.ticket.count({
+    where: {
+      status: { not: Status.DONE },
+      OR: [
+        { dueAt: { lt: new Date() } },
+        { assigneeName: null },
+        { priority: Priority.HIGH }
+      ]
+    }
+  });
 
   const completedTickets = await prisma.ticket.findMany({
     where: {
@@ -97,7 +121,10 @@ export async function getResolutionSummary() {
         DONE: doneCount
       },
       todayCompletedCount,
-      overdueCount
+      overdueCount,
+      unassignedOpenCount,
+      highPriorityOpenCount,
+      attentionOpenCount
     };
   }
 
@@ -148,6 +175,9 @@ export async function getResolutionSummary() {
       DONE: doneCount
     },
     todayCompletedCount,
-    overdueCount
+    overdueCount,
+    unassignedOpenCount,
+    highPriorityOpenCount,
+    attentionOpenCount
   };
 }

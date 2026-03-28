@@ -8,6 +8,7 @@ export type Ticket = {
   title: string;
   description: string;
   requesterName: string;
+  assigneeName: string | null;
   status: Status;
   priority: Priority;
   dueAt: string | null;
@@ -20,7 +21,7 @@ export type TicketHistory = {
   id: string;
   ticketId: string;
   actorName: string;
-  eventType: "CREATED" | "STATUS_CHANGED" | "COMMENT";
+  eventType: "CREATED" | "STATUS_CHANGED" | "COMMENT" | "ASSIGNEE_CHANGED";
   fromStatus: Status | null;
   toStatus: Status | null;
   note: string | null;
@@ -35,6 +36,7 @@ export async function createTicket(payload: {
   title: string;
   description: string;
   requesterName: string;
+  assigneeName?: string;
   priority?: Priority;
   dueAt?: string;
 }) {
@@ -53,6 +55,7 @@ export async function listTicketsWithFilters(filters: {
   status?: Status;
   priority?: Priority;
   requesterName?: string;
+  assigneeName?: string;
   q?: string;
   overdueOnly?: boolean;
 }) {
@@ -65,6 +68,9 @@ export async function listTicketsWithFilters(filters: {
   }
   if (filters.priority) {
     params.set("priority", filters.priority);
+  }
+  if (filters.assigneeName) {
+    params.set("assigneeName", filters.assigneeName);
   }
   if (filters.q) {
     params.set("q", filters.q);
@@ -105,6 +111,22 @@ export async function addTicketComment(payload: {
     method: "POST",
     body: JSON.stringify({
       actorName: payload.actorName,
+      note: payload.note
+    })
+  });
+}
+
+export async function changeTicketAssignee(payload: {
+  ticketId: string;
+  actorName: string;
+  toAssigneeName: string | null;
+  note?: string;
+}) {
+  return apiRequest<Ticket>(`/api/tickets/${payload.ticketId}/assignee`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      actorName: payload.actorName,
+      toAssigneeName: payload.toAssigneeName,
       note: payload.note
     })
   });

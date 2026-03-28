@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { setAuthContext } from "../api/client";
 import {
   addTicketComment,
+  changeTicketAssignee,
   changeTicketStatus,
   createTicket,
   getTicketDetail,
@@ -39,10 +40,12 @@ export function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState<Status | "ALL">("ALL");
   const [priorityFilter, setPriorityFilter] = useState<Priority | "ALL">("ALL");
   const [requesterFilter, setRequesterFilter] = useState("");
+  const [assigneeFilter, setAssigneeFilter] = useState("");
   const [keywordFilter, setKeywordFilter] = useState("");
   const [overdueOnly, setOverdueOnly] = useState(false);
 
   const [createRequesterName, setCreateRequesterName] = useState("");
+  const [createAssigneeName, setCreateAssigneeName] = useState("");
   const [createTitle, setCreateTitle] = useState("");
   const [createDescription, setCreateDescription] = useState("");
   const [createPriority, setCreatePriority] = useState<Priority>("MEDIUM");
@@ -54,6 +57,10 @@ export function DashboardPage() {
 
   const [commentActorName, setCommentActorName] = useState("");
   const [commentNote, setCommentNote] = useState("");
+
+  const [assigneeActorName, setAssigneeActorName] = useState("");
+  const [toAssigneeName, setToAssigneeName] = useState("");
+  const [assigneeNote, setAssigneeNote] = useState("");
 
   const [summary, setSummary] = useState({
     completedCount: 0,
@@ -67,6 +74,9 @@ export function DashboardPage() {
     },
     todayCompletedCount: 0,
     overdueCount: 0,
+    unassignedOpenCount: 0,
+    highPriorityOpenCount: 0,
+    attentionOpenCount: 0,
     dailyCompleted: [] as Array<{ date: string; count: number }>
   });
 
@@ -94,6 +104,7 @@ export function DashboardPage() {
           status: statusFilter === "ALL" ? undefined : statusFilter,
           priority: priorityFilter === "ALL" ? undefined : priorityFilter,
           requesterName: requesterFilter || undefined,
+          assigneeName: assigneeFilter || undefined,
           q: keywordFilter || undefined,
           overdueOnly
         }),
@@ -115,12 +126,14 @@ export function DashboardPage() {
     try {
       await createTicket({
         requesterName: createRequesterName,
+        assigneeName: createAssigneeName || undefined,
         title: createTitle,
         description: createDescription,
         priority: createPriority,
         dueAt: createDueAt ? new Date(createDueAt).toISOString() : undefined
       });
       setCreateRequesterName("");
+      setCreateAssigneeName("");
       setCreateTitle("");
       setCreateDescription("");
       setCreatePriority("MEDIUM");
@@ -173,6 +186,27 @@ export function DashboardPage() {
     }
   }
 
+  async function onChangeAssignee(e: FormEvent) {
+    e.preventDefault();
+    if (!selectedTicketId) {
+      setMessage("먼저 티켓을 선택하세요.");
+      return;
+    }
+    try {
+      await changeTicketAssignee({
+        ticketId: selectedTicketId,
+        actorName: assigneeActorName,
+        toAssigneeName: toAssigneeName.trim() ? toAssigneeName.trim() : null,
+        note: assigneeNote || undefined
+      });
+      setAssigneeNote("");
+      setMessage("담당자가 변경되었습니다.");
+      await refreshAll();
+    } catch (err) {
+      setMessage((err as Error).message);
+    }
+  }
+
   async function onOpenDetail(ticketId: string) {
     try {
       setSelectedTicketId(ticketId);
@@ -207,7 +241,7 @@ export function DashboardPage() {
             <input value={userName} onChange={(e) => setUserName(e.target.value)} />
           </label>
         </div>
-        <p className="hint">REQUESTER는 본인 티켓만 조회할 수 있고 상태 변경은 불가합니다.</p>
+        <p className="hint">REQUESTER는 본인 티켓만 조회할 수 있고 상태/담당자 변경은 불가합니다.</p>
       </section>
 
       <section className="stats-grid">
@@ -235,6 +269,18 @@ export function DashboardPage() {
           <h3>현재 지연 건수</h3>
           <strong>{summary.overdueCount}</strong>
         </article>
+        <article className="stat-card blue">
+          <h3>미배정 진행 건수</h3>
+          <strong>{summary.unassignedOpenCount}</strong>
+        </article>
+        <article className="stat-card orange">
+          <h3>고우선순위 진행 건수</h3>
+          <strong>{summary.highPriorityOpenCount}</strong>
+        </article>
+        <article className="stat-card red">
+          <h3>주의 티켓 합계</h3>
+          <strong>{summary.attentionOpenCount}</strong>
+        </article>
       </section>
 
       <section className="panel">
@@ -251,18 +297,19 @@ export function DashboardPage() {
         <form className="form-grid" onSubmit={onCreateTicket}>
           <label>
             요청자
+            <input value={createRequesterName} onChange={(e) => setCreateRequesterName(e.target.value)} />
+          </label>
+          <label>
+            담당자
             <input
-              value={createRequesterName}
-              onChange={(e) => setCreateRequesterName(e.target.value)}
-              placeholder="예: user1"
+              value={createAssigneeName}
+              onChange={(e) => setCreateAssigneeName(e.target.value)}
+              placeholder="선택"
             />
           </label>
           <label>
             우선순위
-            <select
-              value={createPriority}
-              onChange={(e) => setCreatePriority(e.target.value as Priority)}
-            >
+            <select value={createPriority} onChange={(e) => setCreatePriority(e.target.value as Priority)}>
               <option value="LOW">낮음</option>
               <option value="MEDIUM">보통</option>
               <option value="HIGH">높음</option>
@@ -270,32 +317,17 @@ export function DashboardPage() {
           </label>
           <label>
             마감기한
-            <input
-              type="datetime-local"
-              value={createDueAt}
-              onChange={(e) => setCreateDueAt(e.target.value)}
-            />
+            <input type="datetime-local" value={createDueAt} onChange={(e) => setCreateDueAt(e.target.value)} />
           </label>
           <label className="full">
             제목
-            <input
-              value={createTitle}
-              onChange={(e) => setCreateTitle(e.target.value)}
-              placeholder="예: VPN 접속 오류"
-            />
+            <input value={createTitle} onChange={(e) => setCreateTitle(e.target.value)} />
           </label>
           <label className="full">
             내용
-            <textarea
-              value={createDescription}
-              onChange={(e) => setCreateDescription(e.target.value)}
-              rows={3}
-            />
+            <textarea value={createDescription} onChange={(e) => setCreateDescription(e.target.value)} rows={3} />
           </label>
-          <button
-            type="submit"
-            disabled={!createRequesterName || !createTitle || !createDescription}
-          >
+          <button type="submit" disabled={!createRequesterName || !createTitle || !createDescription}>
             티켓 등록
           </button>
         </form>
@@ -306,10 +338,7 @@ export function DashboardPage() {
         <div className="row wrap">
           <label>
             상태
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as Status | "ALL")}
-            >
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as Status | "ALL")}>
               <option value="ALL">전체</option>
               <option value="RECEIVED">접수</option>
               <option value="IN_PROGRESS">처리중</option>
@@ -318,10 +347,7 @@ export function DashboardPage() {
           </label>
           <label>
             우선순위
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value as Priority | "ALL")}
-            >
+            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as Priority | "ALL")}>
               <option value="ALL">전체</option>
               <option value="LOW">낮음</option>
               <option value="MEDIUM">보통</option>
@@ -333,15 +359,15 @@ export function DashboardPage() {
             <input value={requesterFilter} onChange={(e) => setRequesterFilter(e.target.value)} />
           </label>
           <label>
+            담당자
+            <input value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} />
+          </label>
+          <label>
             키워드
             <input value={keywordFilter} onChange={(e) => setKeywordFilter(e.target.value)} />
           </label>
           <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={overdueOnly}
-              onChange={(e) => setOverdueOnly(e.target.checked)}
-            />
+            <input type="checkbox" checked={overdueOnly} onChange={(e) => setOverdueOnly(e.target.checked)} />
             지연 건만 보기
           </label>
           <button type="button" onClick={() => void refreshAll()}>
@@ -355,6 +381,7 @@ export function DashboardPage() {
               <th>티켓</th>
               <th>제목</th>
               <th>요청자</th>
+              <th>담당자</th>
               <th>우선순위</th>
               <th>상태</th>
               <th>기한</th>
@@ -364,7 +391,7 @@ export function DashboardPage() {
           <tbody>
             {tickets.length === 0 && (
               <tr>
-                <td colSpan={7}>조건에 맞는 티켓이 없습니다.</td>
+                <td colSpan={8}>조건에 맞는 티켓이 없습니다.</td>
               </tr>
             )}
             {tickets.map((ticket) => (
@@ -372,6 +399,7 @@ export function DashboardPage() {
                 <td>{ticket.id.slice(0, 8)}</td>
                 <td>{ticket.title}</td>
                 <td>{ticket.requesterName}</td>
+                <td>{ticket.assigneeName ?? "-"}</td>
                 <td>{PRIORITY_LABEL[ticket.priority]}</td>
                 <td>{STATUS_LABEL[ticket.status]}</td>
                 <td>{ticket.dueAt ? new Date(ticket.dueAt).toLocaleString() : "-"}</td>
@@ -392,10 +420,7 @@ export function DashboardPage() {
           <form className="form-grid" onSubmit={onChangeStatus}>
             <label>
               티켓
-              <select
-                value={selectedTicketId}
-                onChange={(e) => setSelectedTicketId(e.target.value)}
-              >
+              <select value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
                 <option value="">선택하세요</option>
                 {tickets.map((ticket) => (
                   <option key={ticket.id} value={ticket.id}>
@@ -406,18 +431,11 @@ export function DashboardPage() {
             </label>
             <label>
               처리자
-              <input
-                value={changeActorName}
-                onChange={(e) => setChangeActorName(e.target.value)}
-                placeholder="예: agent1"
-              />
+              <input value={changeActorName} onChange={(e) => setChangeActorName(e.target.value)} />
             </label>
             <label>
               변경 상태
-              <select
-                value={changeToStatus}
-                onChange={(e) => setChangeToStatus(e.target.value as Status)}
-              >
+              <select value={changeToStatus} onChange={(e) => setChangeToStatus(e.target.value as Status)}>
                 <option value="IN_PROGRESS">처리중</option>
                 <option value="DONE">완료</option>
               </select>
@@ -431,31 +449,54 @@ export function DashboardPage() {
             </button>
           </form>
         </div>
-
         <div>
           <h2>코멘트 추가</h2>
           <form className="form-grid" onSubmit={onAddComment}>
             <label>
               작성자
-              <input
-                value={commentActorName}
-                onChange={(e) => setCommentActorName(e.target.value)}
-                placeholder="예: agent1"
-              />
+              <input value={commentActorName} onChange={(e) => setCommentActorName(e.target.value)} />
             </label>
             <label>
               코멘트
-              <textarea
-                value={commentNote}
-                onChange={(e) => setCommentNote(e.target.value)}
-                rows={3}
-              />
+              <textarea value={commentNote} onChange={(e) => setCommentNote(e.target.value)} rows={3} />
             </label>
             <button type="submit" disabled={!selectedTicketId || !commentActorName || !commentNote}>
               코멘트 등록
             </button>
           </form>
         </div>
+      </section>
+
+      <section className="panel">
+        <h2>담당자 지정/변경</h2>
+        <form className="form-grid" onSubmit={onChangeAssignee}>
+          <label>
+            티켓
+            <select value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
+              <option value="">선택하세요</option>
+              {tickets.map((ticket) => (
+                <option key={ticket.id} value={ticket.id}>
+                  [{ticket.id.slice(0, 8)}] {ticket.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            변경자
+            <input value={assigneeActorName} onChange={(e) => setAssigneeActorName(e.target.value)} />
+          </label>
+          <label>
+            담당자명
+            <input value={toAssigneeName} onChange={(e) => setToAssigneeName(e.target.value)} placeholder="비우면 미배정" />
+          </label>
+          <label>
+            메모
+            <input value={assigneeNote} onChange={(e) => setAssigneeNote(e.target.value)} />
+          </label>
+          <button type="submit" disabled={!selectedTicketId || !assigneeActorName}>
+            담당자 변경 저장
+          </button>
+        </form>
       </section>
 
       <section className="panel">
@@ -467,6 +508,7 @@ export function DashboardPage() {
               <span>티켓: {detail.id.slice(0, 8)}</span>
               <span>제목: {detail.title}</span>
               <span>요청자: {detail.requesterName}</span>
+              <span>담당자: {detail.assigneeName ?? "-"}</span>
               <span>우선순위: {PRIORITY_LABEL[detail.priority]}</span>
               <span>상태: {STATUS_LABEL[detail.status]}</span>
             </div>

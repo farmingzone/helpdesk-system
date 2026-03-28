@@ -7,6 +7,7 @@ import {
   findTicketById,
   listTickets,
   listTicketsWithFilters,
+  updateTicketAssigneeWithHistory,
   updateTicketStatusWithHistory
 } from "./tickets.repository";
 
@@ -14,6 +15,7 @@ type CreateTicketParams = {
   title: string;
   description: string;
   requesterName: string;
+  assigneeName?: string;
   priority?: Priority;
   dueAt?: Date;
 };
@@ -29,6 +31,7 @@ export async function getTicketList(status?: Status) {
 type TicketListFilters = {
   status?: Status;
   requesterName?: string;
+  assigneeName?: string;
   query?: string;
   priority?: Priority;
   overdueOnly?: boolean;
@@ -115,6 +118,44 @@ export async function changeTicketStatus(
     fromStatus: currentTicket.status,
     toStatus: params.toStatus,
     actorName: params.actorName,
+    note: params.note
+  });
+
+  return { ok: true, ticket: updatedTicket };
+}
+
+type ChangeTicketAssigneeParams = {
+  ticketId: string;
+  actorName: string;
+  toAssigneeName: string | null;
+  note?: string;
+};
+
+type ChangeTicketAssigneeResult =
+  | { ok: true; ticket: Awaited<ReturnType<typeof updateTicketAssigneeWithHistory>> }
+  | { ok: false; code: 400 | 404; message: string };
+
+export async function changeTicketAssignee(
+  params: ChangeTicketAssigneeParams
+): Promise<ChangeTicketAssigneeResult> {
+  const currentTicket = await findTicketById(params.ticketId);
+  if (!currentTicket) {
+    return { ok: false, code: 404, message: "Ticket not found" };
+  }
+
+  const currentAssignee = currentTicket.assigneeName ?? null;
+  if (currentAssignee === params.toAssigneeName) {
+    return {
+      ok: false,
+      code: 400,
+      message: "Same assignee change is not allowed"
+    };
+  }
+
+  const updatedTicket = await updateTicketAssigneeWithHistory({
+    ticketId: params.ticketId,
+    actorName: params.actorName,
+    toAssigneeName: params.toAssigneeName,
     note: params.note
   });
 

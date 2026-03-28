@@ -1,4 +1,4 @@
-import { Status } from "@prisma/client";
+import { Priority, Status } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import { prisma } from "../src/db/client";
 import {
@@ -100,6 +100,7 @@ describe("Average resolution time stats", () => {
         description: "overdue-open",
         requesterName: "tester-z",
         status: Status.IN_PROGRESS,
+        priority: Priority.HIGH,
         dueAt: pastDue
       }
     });
@@ -117,5 +118,8 @@ describe("Average resolution time stats", () => {
 
     const summary = await getResolutionSummary();
     expect(summary.overdueCount).toBe(1);
+    expect(summary.unassignedOpenCount).toBe(1);
+    expect(summary.highPriorityOpenCount).toBe(1);
+    expect(summary.attentionOpenCount).toBe(1);
   });
 });

@@ -5,6 +5,7 @@ type CreateTicketInput = {
   title: string;
   description: string;
   requesterName: string;
+  assigneeName?: string;
   priority?: Priority;
   dueAt?: Date;
 };
@@ -16,6 +17,7 @@ export async function createTicketWithCreatedHistory(input: CreateTicketInput) {
         title: input.title,
         description: input.description,
         requesterName: input.requesterName,
+        assigneeName: input.assigneeName,
         status: Status.RECEIVED,
         priority: input.priority ?? Priority.MEDIUM,
         dueAt: input.dueAt
@@ -50,6 +52,7 @@ export async function listTickets(status?: Status) {
 type ListTicketFilters = {
   status?: Status;
   requesterName?: string;
+  assigneeName?: string;
   query?: string;
   priority?: Priority;
   overdueOnly?: boolean;
@@ -64,6 +67,10 @@ export async function listTicketsWithFilters(filters: ListTicketFilters) {
 
   if (filters.requesterName) {
     where.requesterName = filters.requesterName;
+  }
+
+  if (filters.assigneeName) {
+    where.assigneeName = filters.assigneeName;
   }
 
   if (filters.query) {
@@ -166,5 +173,43 @@ export async function addTicketComment(input: AddTicketCommentInput) {
       eventType: EventType.COMMENT,
       note: input.note
     }
+  });
+}
+
+type UpdateTicketAssigneeInput = {
+  ticketId: string;
+  actorName: string;
+  toAssigneeName: string | null;
+  note?: string;
+};
+
+export async function updateTicketAssigneeWithHistory(input: UpdateTicketAssigneeInput) {
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.ticket.findUnique({
+      where: { id: input.ticketId },
+      select: { assigneeName: true }
+    });
+
+    const ticket = await tx.ticket.update({
+      where: { id: input.ticketId },
+      data: {
+        assigneeName: input.toAssigneeName
+      }
+    });
+
+    const fromAssignee = current?.assigneeName ?? "unassigned";
+    const toAssignee = input.toAssigneeName ?? "unassigned";
+    const defaultNote = `assignee: ${fromAssignee} -> ${toAssignee}`;
+
+    await tx.ticketHistory.create({
+      data: {
+        ticketId: input.ticketId,
+        actorName: input.actorName,
+        eventType: EventType.ASSIGNEE_CHANGED,
+        note: input.note ?? defaultNote
+      }
+    });
+
+    return ticket;
   });
 }

@@ -23,6 +23,7 @@ enum EventType {
   CREATED
   STATUS_CHANGED
   COMMENT
+  ASSIGNEE_CHANGED
 }
 
 model Ticket {
@@ -30,6 +31,7 @@ model Ticket {
   title         String
   description   String
   requesterName String          @map("requester_name")
+  assigneeName  String?         @map("assignee_name")
   status        Status          @default(RECEIVED)
   priority      Priority        @default(MEDIUM)
   dueAt         DateTime?       @map("due_at")
@@ -41,6 +43,7 @@ model Ticket {
   @@index([status, createdAt])
   @@index([resolvedAt])
   @@index([priority, dueAt])
+  @@index([assigneeName, status])
   @@map("tickets")
 }
 
