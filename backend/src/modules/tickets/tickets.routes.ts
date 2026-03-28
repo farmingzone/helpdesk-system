@@ -1,6 +1,8 @@
 import { Priority, Status } from "@prisma/client";
 import { Router } from "express";
 import { z } from "zod";
+import { AppError } from "../../middlewares/http-error";
+import { logInfo } from "../../observability/logger";
 import { canChangeStatus, getUserContext } from "../auth/auth";
 import {
   addCommentToTicket,
@@ -50,6 +52,38 @@ const changeAssigneeSchema = z.object({
   note: z.string().optional()
 });
 
+function getRequestId(res: { locals: { requestId?: unknown } }) {
+  if (typeof res.locals.requestId === "string" && res.locals.requestId.length > 0) {
+    return res.locals.requestId;
+  }
+
+  return "unknown";
+}
+
+function toErrorCode(statusCode: number, message: string) {
+  if (statusCode === 403) {
+    return "FORBIDDEN";
+  }
+
+  if (statusCode === 404) {
+    return "TICKET_NOT_FOUND";
+  }
+
+  if (statusCode === 400) {
+    if (message.includes("transition")) {
+      return "INVALID_STATUS_TRANSITION";
+    }
+
+    if (message.includes("assignee")) {
+      return "INVALID_ASSIGNEE_CHANGE";
+    }
+
+    return "BAD_REQUEST";
+  }
+
+  return "UNKNOWN_ERROR";
+}
+
 export const ticketsRouter = Router();
 
 ticketsRouter.post("/", async (req, res, next) => {
@@ -98,7 +132,7 @@ ticketsRouter.get("/:ticketId", async (req, res, next) => {
     const result = await getTicketDetailWithAccess(ticketId, user.role, user.userName);
 
     if (!result.ok) {
-      return res.status(result.code).json({ message: result.message });
+      return next(new AppError(result.code, toErrorCode(result.code, result.message), result.message));
     }
 
     return res.json(result.ticket);
@@ -114,7 +148,7 @@ ticketsRouter.post("/:ticketId/comments", async (req, res, next) => {
     const body = addCommentSchema.parse(req.body);
     const access = await getTicketDetailWithAccess(ticketId, user.role, user.userName);
     if (!access.ok) {
-      return res.status(access.code).json({ message: access.message });
+      return next(new AppError(access.code, toErrorCode(access.code, access.message), access.message));
     }
     const actorName = user.role === "REQUESTER" ? user.userName : body.actorName;
 
@@ -125,8 +159,14 @@ ticketsRouter.post("/:ticketId/comments", async (req, res, next) => {
     });
 
     if (!result.ok) {
-      return res.status(result.code).json({ message: result.message });
+      return next(new AppError(result.code, toErrorCode(result.code, result.message), result.message));
     }
+
+    logInfo("business.ticket.comment_added", {
+      requestId: getRequestId(res),
+      ticketId,
+      actorName
+    });
 
     return res.status(201).json(result.comment);
   } catch (err) {
@@ -138,7 +178,7 @@ ticketsRouter.patch("/:ticketId/status", async (req, res, next) => {
   try {
     const user = getUserContext(req);
     if (!canChangeStatus(user.role)) {
-      return res.status(403).json({ message: "Forbidden" });
+      return next(new AppError(403, "FORBIDDEN", "Forbidden"));
     }
 
     const { ticketId } = statusParamsSchema.parse(req.params);
@@ -152,8 +192,15 @@ ticketsRouter.patch("/:ticketId/status", async (req, res, next) => {
     });
 
     if (!result.ok) {
-      return res.status(result.code).json({ message: result.message });
+      return next(new AppError(result.code, toErrorCode(result.code, result.message), result.message));
     }
+
+    logInfo("business.ticket.status_changed", {
+      requestId: getRequestId(res),
+      ticketId,
+      actorName: body.actorName,
+      toStatus: body.toStatus
+    });
 
     return res.json(result.ticket);
   } catch (err) {
@@ -165,7 +212,7 @@ ticketsRouter.patch("/:ticketId/assignee", async (req, res, next) => {
   try {
     const user = getUserContext(req);
     if (!canChangeStatus(user.role)) {
-      return res.status(403).json({ message: "Forbidden" });
+      return next(new AppError(403, "FORBIDDEN", "Forbidden"));
     }
 
     const { ticketId } = statusParamsSchema.parse(req.params);
@@ -178,8 +225,15 @@ ticketsRouter.patch("/:ticketId/assignee", async (req, res, next) => {
     });
 
     if (!result.ok) {
-      return res.status(result.code).json({ message: result.message });
+      return next(new AppError(result.code, toErrorCode(result.code, result.message), result.message));
     }
+
+    logInfo("business.ticket.assignee_changed", {
+      requestId: getRequestId(res),
+      ticketId,
+      actorName: body.actorName,
+      toAssigneeName: body.toAssigneeName
+    });
 
     return res.json(result.ticket);
   } catch (err) {
