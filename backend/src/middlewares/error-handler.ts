@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import multer from "multer";
 import { ZodError } from "zod";
 
 export function errorHandler(
@@ -12,6 +13,13 @@ export function errorHandler(
       message: "Validation failed",
       issues: err.flatten()
     });
+  }
+
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({ message: "Attachment exceeds max size (5MB)" });
+    }
+    return res.status(400).json({ message: err.message });
   }
 
   console.error(err);

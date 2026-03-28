@@ -1,3 +1,5 @@
+import fs from "fs/promises";
+import path from "path";
 import { afterAll, beforeAll, beforeEach } from "vitest";
 
 process.env.DATABASE_URL = "file:./test.db";
@@ -45,7 +47,10 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await prisma.ticketHistory.deleteMany();
+  await prisma.ticketAttachment.deleteMany();
   await prisma.ticket.deleteMany();
+  const uploadRoot = path.resolve(process.cwd(), "uploads");
+  await fs.rm(uploadRoot, { recursive: true, force: true });
 });
 
 afterAll(async () => {

@@ -1,4 +1,4 @@
-import { apiRequest } from "./client";
+import { apiRequest, getAuthHeaders } from "./client";
 
 export type Status = "RECEIVED" | "IN_PROGRESS" | "DONE";
 export type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -32,6 +32,18 @@ export type TicketHistory = {
 
 export type TicketDetail = Ticket & {
   histories: TicketHistory[];
+};
+
+export type TicketAttachment = {
+  id: string;
+  ticketId: string;
+  originalName: string;
+  normalizedName: string;
+  mimeType: string;
+  sizeBytes: number;
+  storagePath: string;
+  uploadedBy: string;
+  createdAt: string;
 };
 
 export async function createTicket(payload: {
@@ -131,4 +143,72 @@ export async function changeTicketAssignee(payload: {
       note: payload.note
     })
   });
+}
+
+export async function listTicketAttachments(ticketId: string) {
+  return apiRequest<TicketAttachment[]>(`/api/tickets/${ticketId}/attachments`);
+}
+
+export async function uploadTicketAttachment(payload: { ticketId: string; file: File }) {
+  const form = new FormData();
+  form.append("file", payload.file);
+
+  const response = await fetch(`/api/tickets/${payload.ticketId}/attachments`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: form
+  });
+
+  if (!response.ok) {
+    const fallback = `HTTP ${response.status}`;
+    let message = fallback;
+    try {
+      const err = (await response.json()) as { message?: string };
+      if (err.message) {
+        message = err.message;
+      }
+    } catch {
+      // no-op
+    }
+    throw new Error(message);
+  }
+
+  return (await response.json()) as TicketAttachment;
+}
+
+export async function downloadTicketAttachment(payload: {
+  ticketId: string;
+  attachmentId: string;
+  fileName: string;
+}) {
+  const response = await fetch(
+    `/api/tickets/${payload.ticketId}/attachments/${payload.attachmentId}`,
+    {
+      headers: getAuthHeaders()
+    }
+  );
+
+  if (!response.ok) {
+    const fallback = `HTTP ${response.status}`;
+    let message = fallback;
+    try {
+      const err = (await response.json()) as { message?: string };
+      if (err.message) {
+        message = err.message;
+      }
+    } catch {
+      // no-op
+    }
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = payload.fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
 }

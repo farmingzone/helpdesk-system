@@ -5,13 +5,17 @@ import {
   changeTicketAssignee,
   changeTicketStatus,
   createTicket,
+  downloadTicketAttachment,
   getTicketDetail,
+  listTicketAttachments,
   listTicketsWithFilters,
   Priority,
   SlaStatus,
   Status,
+  TicketAttachment,
   Ticket,
-  TicketDetail
+  TicketDetail,
+  uploadTicketAttachment
 } from "../api/tickets";
 import { getResolutionSummary } from "../api/stats";
 
@@ -45,6 +49,8 @@ export function DashboardPage() {
   const [detail, setDetail] = useState<TicketDetail | null>(null);
   const [selectedTicketId, setSelectedTicketId] = useState("");
   const [message, setMessage] = useState("");
+  const [attachments, setAttachments] = useState<TicketAttachment[]>([]);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<Status | "ALL">("ALL");
   const [priorityFilter, setPriorityFilter] = useState<Priority | "ALL">("ALL");
@@ -97,6 +103,8 @@ export function DashboardPage() {
     setAuthContext({ role, userName: userName || "anonymous" });
     setSelectedTicketId("");
     setDetail(null);
+    setAttachments([]);
+    setAttachmentFile(null);
     setMessage("");
   }, [role, userName]);
 
@@ -121,8 +129,12 @@ export function DashboardPage() {
       setTickets(ticketList);
       setSummary(summaryData);
       if (selectedTicketId) {
-        const updatedDetail = await getTicketDetail(selectedTicketId);
+        const [updatedDetail, updatedAttachments] = await Promise.all([
+          getTicketDetail(selectedTicketId),
+          listTicketAttachments(selectedTicketId)
+        ]);
         setDetail(updatedDetail);
+        setAttachments(updatedAttachments);
       }
     } catch (err) {
       setMessage((err as Error).message);
@@ -216,9 +228,56 @@ export function DashboardPage() {
   async function onOpenDetail(ticketId: string) {
     try {
       setSelectedTicketId(ticketId);
-      const data = await getTicketDetail(ticketId);
+      const [data, attachmentList] = await Promise.all([
+        getTicketDetail(ticketId),
+        listTicketAttachments(ticketId)
+      ]);
       setDetail(data);
+      setAttachments(attachmentList);
       setMessage("");
+    } catch (err) {
+      setMessage((err as Error).message);
+    }
+  }
+
+  async function onUploadAttachment(e: FormEvent) {
+    e.preventDefault();
+    if (!selectedTicketId) {
+      setMessage("먼저 티켓을 선택하세요.");
+      return;
+    }
+
+    if (!attachmentFile) {
+      setMessage("업로드할 파일을 선택하세요.");
+      return;
+    }
+
+    try {
+      await uploadTicketAttachment({
+        ticketId: selectedTicketId,
+        file: attachmentFile
+      });
+      setAttachmentFile(null);
+      setMessage("첨부파일이 업로드되었습니다.");
+      await refreshAll();
+    } catch (err) {
+      setMessage((err as Error).message);
+    }
+  }
+
+  async function onDownloadAttachment(attachment: TicketAttachment) {
+    if (!selectedTicketId) {
+      setMessage("먼저 티켓을 선택하세요.");
+      return;
+    }
+
+    try {
+      await downloadTicketAttachment({
+        ticketId: selectedTicketId,
+        attachmentId: attachment.id,
+        fileName: attachment.normalizedName
+      });
+      setMessage("첨부파일 다운로드를 시작했습니다.");
     } catch (err) {
       setMessage((err as Error).message);
     }
@@ -552,6 +611,46 @@ export function DashboardPage() {
                 ))}
               </tbody>
             </table>
+            <h3>첨부파일</h3>
+            <form className="row wrap" onSubmit={onUploadAttachment}>
+              <input
+                type="file"
+                onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)}
+              />
+              <button type="submit" disabled={!selectedTicketId || !attachmentFile}>
+                파일 업로드
+              </button>
+            </form>
+            {attachments.length === 0 ? (
+              <p className="hint">등록된 첨부파일이 없습니다.</p>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>파일명</th>
+                    <th>용량</th>
+                    <th>업로드자</th>
+                    <th>업로드 시각</th>
+                    <th>다운로드</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attachments.map((attachment) => (
+                    <tr key={attachment.id}>
+                      <td>{attachment.normalizedName}</td>
+                      <td>{(attachment.sizeBytes / 1024).toFixed(1)} KB</td>
+                      <td>{attachment.uploadedBy}</td>
+                      <td>{new Date(attachment.createdAt).toLocaleString()}</td>
+                      <td>
+                        <button type="button" onClick={() => void onDownloadAttachment(attachment)}>
+                          받기
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </>
         )}
       </section>

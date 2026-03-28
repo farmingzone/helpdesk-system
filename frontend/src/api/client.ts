@@ -12,13 +12,19 @@ export function setAuthContext(next: AuthContext) {
   authContext = next;
 }
 
+export function getAuthHeaders(extra?: HeadersInit): HeadersInit {
+  return {
+    "x-role": authContext.role,
+    "x-user": authContext.userName,
+    ...(extra ?? {})
+  };
+}
+
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     headers: {
       "Content-Type": "application/json",
-      "x-role": authContext.role,
-      "x-user": authContext.userName,
-      ...(init?.headers ?? {})
+      ...getAuthHeaders(init?.headers)
     },
     ...init
   });
