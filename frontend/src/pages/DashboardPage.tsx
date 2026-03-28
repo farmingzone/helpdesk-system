@@ -230,7 +230,7 @@ export function DashboardPage() {
         <div className="row">
           <label>
             역할
-            <select value={role} onChange={(e) => setRole(e.target.value as Role)}>
+            <select data-testid="role-select" value={role} onChange={(e) => setRole(e.target.value as Role)}>
               <option value="ADMIN">ADMIN</option>
               <option value="AGENT">AGENT</option>
               <option value="REQUESTER">REQUESTER</option>
@@ -238,7 +238,7 @@ export function DashboardPage() {
           </label>
           <label>
             사용자 이름
-            <input value={userName} onChange={(e) => setUserName(e.target.value)} />
+            <input data-testid="user-name-input" value={userName} onChange={(e) => setUserName(e.target.value)} />
           </label>
         </div>
         <p className="hint">REQUESTER는 본인 티켓만 조회할 수 있고 상태/담당자 변경은 불가합니다.</p>
@@ -267,7 +267,7 @@ export function DashboardPage() {
         </article>
         <article className="stat-card gray">
           <h3>현재 지연 건수</h3>
-          <strong>{summary.overdueCount}</strong>
+          <strong data-testid="overdue-count">{summary.overdueCount}</strong>
         </article>
         <article className="stat-card blue">
           <h3>미배정 진행 건수</h3>
@@ -297,11 +297,16 @@ export function DashboardPage() {
         <form className="form-grid" onSubmit={onCreateTicket}>
           <label>
             요청자
-            <input value={createRequesterName} onChange={(e) => setCreateRequesterName(e.target.value)} />
+            <input
+              data-testid="create-requester-input"
+              value={createRequesterName}
+              onChange={(e) => setCreateRequesterName(e.target.value)}
+            />
           </label>
           <label>
             담당자
             <input
+              data-testid="create-assignee-input"
               value={createAssigneeName}
               onChange={(e) => setCreateAssigneeName(e.target.value)}
               placeholder="선택"
@@ -309,7 +314,11 @@ export function DashboardPage() {
           </label>
           <label>
             우선순위
-            <select value={createPriority} onChange={(e) => setCreatePriority(e.target.value as Priority)}>
+            <select
+              data-testid="create-priority-select"
+              value={createPriority}
+              onChange={(e) => setCreatePriority(e.target.value as Priority)}
+            >
               <option value="LOW">낮음</option>
               <option value="MEDIUM">보통</option>
               <option value="HIGH">높음</option>
@@ -317,17 +326,27 @@ export function DashboardPage() {
           </label>
           <label>
             마감기한
-            <input type="datetime-local" value={createDueAt} onChange={(e) => setCreateDueAt(e.target.value)} />
+            <input
+              data-testid="create-due-at-input"
+              type="datetime-local"
+              value={createDueAt}
+              onChange={(e) => setCreateDueAt(e.target.value)}
+            />
           </label>
           <label className="full">
             제목
-            <input value={createTitle} onChange={(e) => setCreateTitle(e.target.value)} />
+            <input data-testid="create-title-input" value={createTitle} onChange={(e) => setCreateTitle(e.target.value)} />
           </label>
           <label className="full">
             내용
-            <textarea value={createDescription} onChange={(e) => setCreateDescription(e.target.value)} rows={3} />
+            <textarea
+              data-testid="create-description-input"
+              value={createDescription}
+              onChange={(e) => setCreateDescription(e.target.value)}
+              rows={3}
+            />
           </label>
-          <button type="submit" disabled={!createRequesterName || !createTitle || !createDescription}>
+          <button data-testid="create-submit-button" type="submit" disabled={!createRequesterName || !createTitle || !createDescription}>
             티켓 등록
           </button>
         </form>
@@ -367,7 +386,12 @@ export function DashboardPage() {
             <input value={keywordFilter} onChange={(e) => setKeywordFilter(e.target.value)} />
           </label>
           <label className="checkbox">
-            <input type="checkbox" checked={overdueOnly} onChange={(e) => setOverdueOnly(e.target.checked)} />
+            <input
+              data-testid="overdue-only-checkbox"
+              type="checkbox"
+              checked={overdueOnly}
+              onChange={(e) => setOverdueOnly(e.target.checked)}
+            />
             지연 건만 보기
           </label>
           <button type="button" onClick={() => void refreshAll()}>
@@ -395,7 +419,7 @@ export function DashboardPage() {
               </tr>
             )}
             {tickets.map((ticket) => (
-              <tr key={ticket.id}>
+              <tr key={ticket.id} data-testid={`ticket-row-${ticket.id}`}>
                 <td>{ticket.id.slice(0, 8)}</td>
                 <td>{ticket.title}</td>
                 <td>{ticket.requesterName}</td>
@@ -404,7 +428,7 @@ export function DashboardPage() {
                 <td>{STATUS_LABEL[ticket.status]}</td>
                 <td>{ticket.dueAt ? new Date(ticket.dueAt).toLocaleString() : "-"}</td>
                 <td>
-                  <button type="button" onClick={() => void onOpenDetail(ticket.id)}>
+                  <button data-testid={`open-detail-${ticket.id}`} type="button" onClick={() => void onOpenDetail(ticket.id)}>
                     보기
                   </button>
                 </td>
@@ -420,7 +444,7 @@ export function DashboardPage() {
           <form className="form-grid" onSubmit={onChangeStatus}>
             <label>
               티켓
-              <select value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
+              <select data-testid="status-ticket-select" value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
                 <option value="">선택하세요</option>
                 {tickets.map((ticket) => (
                   <option key={ticket.id} value={ticket.id}>
@@ -431,11 +455,11 @@ export function DashboardPage() {
             </label>
             <label>
               처리자
-              <input value={changeActorName} onChange={(e) => setChangeActorName(e.target.value)} />
+              <input data-testid="status-actor-input" value={changeActorName} onChange={(e) => setChangeActorName(e.target.value)} />
             </label>
             <label>
               변경 상태
-              <select value={changeToStatus} onChange={(e) => setChangeToStatus(e.target.value as Status)}>
+              <select data-testid="status-to-select" value={changeToStatus} onChange={(e) => setChangeToStatus(e.target.value as Status)}>
                 <option value="IN_PROGRESS">처리중</option>
                 <option value="DONE">완료</option>
               </select>
@@ -444,7 +468,7 @@ export function DashboardPage() {
               메모
               <input value={changeNote} onChange={(e) => setChangeNote(e.target.value)} />
             </label>
-            <button type="submit" disabled={!selectedTicketId || !changeActorName}>
+            <button data-testid="status-submit-button" type="submit" disabled={!selectedTicketId || !changeActorName}>
               상태 변경 저장
             </button>
           </form>
@@ -472,7 +496,7 @@ export function DashboardPage() {
         <form className="form-grid" onSubmit={onChangeAssignee}>
           <label>
             티켓
-            <select value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
+            <select data-testid="assignee-ticket-select" value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
               <option value="">선택하세요</option>
               {tickets.map((ticket) => (
                 <option key={ticket.id} value={ticket.id}>
@@ -483,17 +507,22 @@ export function DashboardPage() {
           </label>
           <label>
             변경자
-            <input value={assigneeActorName} onChange={(e) => setAssigneeActorName(e.target.value)} />
+            <input data-testid="assignee-actor-input" value={assigneeActorName} onChange={(e) => setAssigneeActorName(e.target.value)} />
           </label>
           <label>
             담당자명
-            <input value={toAssigneeName} onChange={(e) => setToAssigneeName(e.target.value)} placeholder="비우면 미배정" />
+            <input
+              data-testid="assignee-name-input"
+              value={toAssigneeName}
+              onChange={(e) => setToAssigneeName(e.target.value)}
+              placeholder="비우면 미배정"
+            />
           </label>
           <label>
             메모
             <input value={assigneeNote} onChange={(e) => setAssigneeNote(e.target.value)} />
           </label>
-          <button type="submit" disabled={!selectedTicketId || !assigneeActorName}>
+          <button data-testid="assignee-submit-button" type="submit" disabled={!selectedTicketId || !assigneeActorName}>
             담당자 변경 저장
           </button>
         </form>
@@ -540,7 +569,7 @@ export function DashboardPage() {
         )}
       </section>
 
-      {message && <div className="message">{message}</div>}
+      {message && <div className="message" data-testid="message-banner">{message}</div>}
       {selectedTicket && <div className="footer-tip">선택된 티켓: {selectedTicket.title}</div>}
     </div>
   );

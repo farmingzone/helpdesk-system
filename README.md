@@ -58,6 +58,19 @@ cd backend
 npm test
 ```
 
+### 4) Playwright E2E
+```bash
+cd frontend
+npm install
+npx playwright install chromium
+npm run test:e2e
+```
+
+루트에서도 실행 가능합니다.
+```bash
+npm run test:e2e
+```
+
 ## API 요약
 - `POST /api/tickets` 티켓 생성
 - `GET /api/tickets?status=RECEIVED|IN_PROGRESS|DONE&requesterName=<name>&q=<keyword>` 티켓 목록/검색

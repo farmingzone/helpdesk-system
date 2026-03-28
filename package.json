@@ -1,0 +1,7 @@
+{
+  "name": "helpdesk-system",
+  "private": true,
+  "scripts": {
+    "test:e2e": "npm --prefix frontend run test:e2e"
+  }
+}
