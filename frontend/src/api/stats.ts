@@ -13,6 +13,14 @@ export type ResolutionSummary = {
   completedCount: number;
   averageResolutionMinutes: number;
   medianResolutionMinutes: number;
+  slaOver24HoursCompletedCount: number;
+  statusCounts: {
+    RECEIVED: number;
+    IN_PROGRESS: number;
+    DONE: number;
+  };
+  todayCompletedCount: number;
+  overdueCount: number;
   dailyCompleted: Array<{ date: string; count: number }>;
 };
 

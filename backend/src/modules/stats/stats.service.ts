@@ -38,6 +38,35 @@ export async function getAverageResolutionTime() {
 }
 
 export async function getResolutionSummary() {
+  const [receivedCount, inProgressCount, doneCount] = await Promise.all([
+    prisma.ticket.count({ where: { status: Status.RECEIVED } }),
+    prisma.ticket.count({ where: { status: Status.IN_PROGRESS } }),
+    prisma.ticket.count({ where: { status: Status.DONE } })
+  ]);
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(todayStart);
+  todayEnd.setDate(todayEnd.getDate() + 1);
+
+  const [todayCompletedCount, overdueCount] = await Promise.all([
+    prisma.ticket.count({
+      where: {
+        status: Status.DONE,
+        resolvedAt: {
+          gte: todayStart,
+          lt: todayEnd
+        }
+      }
+    }),
+    prisma.ticket.count({
+      where: {
+        dueAt: { lt: new Date() },
+        status: { not: Status.DONE }
+      }
+    })
+  ]);
+
   const completedTickets = await prisma.ticket.findMany({
     where: {
       status: Status.DONE,
@@ -60,7 +89,15 @@ export async function getResolutionSummary() {
       completedCount: 0,
       averageResolutionMinutes: 0,
       medianResolutionMinutes: 0,
-      dailyCompleted: [] as Array<{ date: string; count: number }>
+      slaOver24HoursCompletedCount: 0,
+      dailyCompleted: [] as Array<{ date: string; count: number }>,
+      statusCounts: {
+        RECEIVED: receivedCount,
+        IN_PROGRESS: inProgressCount,
+        DONE: doneCount
+      },
+      todayCompletedCount,
+      overdueCount
     };
   }
 
@@ -94,10 +131,23 @@ export async function getResolutionSummary() {
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([date, count]) => ({ date, count }));
 
+  const slaThresholdMinutes = 24 * 60;
+  const slaOver24HoursCompletedCount = resolutionMinutes.filter(
+    (minutes) => minutes > slaThresholdMinutes
+  ).length;
+
   return {
     completedCount,
     averageResolutionMinutes,
     medianResolutionMinutes,
-    dailyCompleted
+    slaOver24HoursCompletedCount,
+    dailyCompleted,
+    statusCounts: {
+      RECEIVED: receivedCount,
+      IN_PROGRESS: inProgressCount,
+      DONE: doneCount
+    },
+    todayCompletedCount,
+    overdueCount
   };
 }

@@ -1,10 +1,12 @@
-import { EventType, Prisma, Status } from "@prisma/client";
+import { EventType, Priority, Prisma, Status } from "@prisma/client";
 import { prisma } from "../../db/client";
 
 type CreateTicketInput = {
   title: string;
   description: string;
   requesterName: string;
+  priority?: Priority;
+  dueAt?: Date;
 };
 
 export async function createTicketWithCreatedHistory(input: CreateTicketInput) {
@@ -14,7 +16,9 @@ export async function createTicketWithCreatedHistory(input: CreateTicketInput) {
         title: input.title,
         description: input.description,
         requesterName: input.requesterName,
-        status: Status.RECEIVED
+        status: Status.RECEIVED,
+        priority: input.priority ?? Priority.MEDIUM,
+        dueAt: input.dueAt
       }
     });
 
@@ -47,6 +51,8 @@ type ListTicketFilters = {
   status?: Status;
   requesterName?: string;
   query?: string;
+  priority?: Priority;
+  overdueOnly?: boolean;
 };
 
 export async function listTicketsWithFilters(filters: ListTicketFilters) {
@@ -64,6 +70,25 @@ export async function listTicketsWithFilters(filters: ListTicketFilters) {
     where.OR = [
       { title: { contains: filters.query } },
       { description: { contains: filters.query } }
+    ];
+  }
+
+  if (filters.priority) {
+    where.priority = filters.priority;
+  }
+
+  if (filters.overdueOnly) {
+    where.AND = [
+      {
+        dueAt: {
+          lt: new Date()
+        }
+      },
+      {
+        status: {
+          not: Status.DONE
+        }
+      }
     ];
   }
 
@@ -108,7 +133,7 @@ export async function updateTicketStatusWithHistory(input: UpdateTicketStatusInp
       where: { id: input.ticketId },
       data: {
         status: input.toStatus,
-        resolvedAt: input.toStatus === Status.DONE ? new Date() : undefined
+        resolvedAt: input.toStatus === Status.DONE ? new Date() : null
       }
     });
 
@@ -124,5 +149,22 @@ export async function updateTicketStatusWithHistory(input: UpdateTicketStatusInp
     });
 
     return ticket;
+  });
+}
+
+type AddTicketCommentInput = {
+  ticketId: string;
+  actorName: string;
+  note: string;
+};
+
+export async function addTicketComment(input: AddTicketCommentInput) {
+  return prisma.ticketHistory.create({
+    data: {
+      ticketId: input.ticketId,
+      actorName: input.actorName,
+      eventType: EventType.COMMENT,
+      note: input.note
+    }
   });
 }

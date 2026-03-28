@@ -1,6 +1,7 @@
-import { Status } from "@prisma/client";
+import { Priority, Status } from "@prisma/client";
 import { UserRole } from "../auth/auth";
 import {
+  addTicketComment,
   createTicketWithCreatedHistory,
   findTicketDetailById,
   findTicketById,
@@ -13,6 +14,8 @@ type CreateTicketParams = {
   title: string;
   description: string;
   requesterName: string;
+  priority?: Priority;
+  dueAt?: Date;
 };
 
 export async function createTicket(params: CreateTicketParams) {
@@ -27,6 +30,8 @@ type TicketListFilters = {
   status?: Status;
   requesterName?: string;
   query?: string;
+  priority?: Priority;
+  overdueOnly?: boolean;
 };
 
 export async function getTicketListWithFilters(filters: TicketListFilters) {
@@ -77,7 +82,7 @@ type ChangeTicketStatusResult =
 const ALLOWED_TRANSITIONS: Record<Status, Status[]> = {
   [Status.RECEIVED]: [Status.IN_PROGRESS],
   [Status.IN_PROGRESS]: [Status.DONE],
-  [Status.DONE]: []
+  [Status.DONE]: [Status.IN_PROGRESS]
 };
 
 export async function changeTicketStatus(
@@ -114,4 +119,31 @@ export async function changeTicketStatus(
   });
 
   return { ok: true, ticket: updatedTicket };
+}
+
+type AddTicketCommentParams = {
+  ticketId: string;
+  actorName: string;
+  note: string;
+};
+
+type AddTicketCommentResult =
+  | { ok: true; comment: Awaited<ReturnType<typeof addTicketComment>> }
+  | { ok: false; code: 404; message: string };
+
+export async function addCommentToTicket(
+  params: AddTicketCommentParams
+): Promise<AddTicketCommentResult> {
+  const ticket = await findTicketById(params.ticketId);
+  if (!ticket) {
+    return { ok: false, code: 404, message: "Ticket not found" };
+  }
+
+  const comment = await addTicketComment({
+    ticketId: params.ticketId,
+    actorName: params.actorName,
+    note: params.note
+  });
+
+  return { ok: true, comment };
 }

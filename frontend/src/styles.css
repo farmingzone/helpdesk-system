@@ -1,41 +1,137 @@
+:root {
+  --bg: #f5f7fb;
+  --panel: #ffffff;
+  --line: #e6ebf2;
+  --text: #1e2a3a;
+  --muted: #6e7a8a;
+  --primary: #2a6cf6;
+  --primary-soft: #e8f0ff;
+  --green-soft: #e9f8ef;
+  --orange-soft: #fff3e5;
+  --pink-soft: #ffeef5;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
-  background: #f3f4f6;
-  color: #111827;
+  font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  background: radial-gradient(circle at 10% 0%, #eef4ff 0%, var(--bg) 45%);
+  color: var(--text);
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 28px 18px 60px;
 }
 
-.desc {
-  margin-top: 4px;
-  color: #4b5563;
+.hero {
+  background: linear-gradient(120deg, #2a6cf6 0%, #4f8dff 60%, #72a4ff 100%);
+  color: #fff;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(37, 91, 211, 0.2);
 }
 
-.card {
-  background: #ffffff;
-  border: 1px solid #d1d5db;
-  padding: 16px;
+.hero h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.hero p {
+  margin: 8px 0 0;
+  opacity: 0.95;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  margin-top: 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.panel h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+}
+
+.row.wrap {
+  flex-wrap: wrap;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
   margin-top: 16px;
 }
 
-.form {
-  display: grid;
-  gap: 10px;
+.stat-card {
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
 }
 
-.form label {
+.stat-card h3 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.stat-card strong {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 24px;
+}
+
+.stat-card.blue {
+  background: var(--primary-soft);
+}
+
+.stat-card.purple {
+  background: #f3edff;
+}
+
+.stat-card.green {
+  background: var(--green-soft);
+}
+
+.stat-card.orange {
+  background: var(--orange-soft);
+}
+
+.stat-card.red {
+  background: #ffecec;
+}
+
+.stat-card.gray {
+  background: #f5f7fa;
+}
+
+.status-counts {
+  display: flex;
+  gap: 18px;
+  color: var(--muted);
+}
+
+label {
   display: grid;
-  gap: 4px;
-  font-size: 14px;
+  gap: 6px;
+  min-width: 120px;
+  font-size: 13px;
+  color: var(--muted);
 }
 
 input,
@@ -43,34 +139,115 @@ textarea,
 select,
 button {
   font: inherit;
-  padding: 8px;
+}
+
+input,
+textarea,
+select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: #fff;
 }
 
 button {
-  width: fit-content;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
 }
 
-.inline {
-  display: flex;
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 10px;
-  align-items: end;
-  margin-bottom: 10px;
+}
+
+.form-grid .full {
+  grid-column: 1 / -1;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.checkbox input {
+  margin: 0;
+  width: 16px;
+  height: 16px;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 10px;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-th,
-td {
-  border: 1px solid #d1d5db;
-  padding: 6px;
+th {
+  background: #f7f9fc;
+  color: #4f5c6e;
   text-align: left;
+  font-size: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 10px;
+}
+
+td {
+  padding: 10px;
+  border-bottom: 1px solid #eff3f8;
+  font-size: 13px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.detail-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #3f4d60;
+}
+
+.hint {
+  color: var(--muted);
+  margin: 8px 0 0;
   font-size: 13px;
 }
 
 .message {
-  margin-top: 12px;
-  color: #1d4ed8;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--pink-soft);
+  color: #8a2a55;
+}
+
+.footer-tip {
+  margin-top: 8px;
+  color: #5f6f84;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
 }

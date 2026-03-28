@@ -1,22 +1,6 @@
-import express from "express";
 import { prisma } from "./db/client";
-import { errorHandler } from "./middlewares/error-handler";
-import { statsRouter } from "./modules/stats/stats.routes";
-import { ticketsRouter } from "./modules/tickets/tickets.routes";
-
-const app = express();
+import { app } from "./app";
 const port = Number(process.env.PORT ?? 3000);
-
-app.use(express.json());
-
-app.get("/health", (_req, res) => {
-  res.json({ ok: true });
-});
-
-app.use("/api/tickets", ticketsRouter);
-app.use("/api/stats", statsRouter);
-
-app.use(errorHandler);
 
 const server = app.listen(port, () => {
   console.log(`Helpdesk backend listening on port ${port}`);

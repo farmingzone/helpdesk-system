@@ -13,24 +13,34 @@ enum Status {
   DONE
 }
 
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 enum EventType {
   CREATED
   STATUS_CHANGED
+  COMMENT
 }
 
 model Ticket {
-  id           String          @id @default(uuid())
-  title        String
-  description  String
-  requesterName String         @map("requester_name")
-  status       Status          @default(RECEIVED)
-  createdAt    DateTime        @default(now()) @map("created_at")
-  updatedAt    DateTime        @updatedAt @map("updated_at")
-  resolvedAt   DateTime?       @map("resolved_at")
-  histories    TicketHistory[]
+  id            String          @id @default(uuid())
+  title         String
+  description   String
+  requesterName String          @map("requester_name")
+  status        Status          @default(RECEIVED)
+  priority      Priority        @default(MEDIUM)
+  dueAt         DateTime?       @map("due_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  resolvedAt    DateTime?       @map("resolved_at")
+  histories     TicketHistory[]
 
   @@index([status, createdAt])
   @@index([resolvedAt])
+  @@index([priority, dueAt])
   @@map("tickets")
 }
 

@@ -85,4 +85,36 @@ describe("Ticket status transitions", () => {
       expect(result.code).toBe(400);
     }
   });
+
+  it("allows DONE -> IN_PROGRESS (re-open)", async () => {
+    const ticket = await createTicket({
+      title: "Reopen issue",
+      description: "Reopen flow check",
+      requesterName: "tester-e"
+    });
+
+    await changeTicketStatus({
+      ticketId: ticket.id,
+      toStatus: Status.IN_PROGRESS,
+      actorName: "agent-e"
+    });
+
+    await changeTicketStatus({
+      ticketId: ticket.id,
+      toStatus: Status.DONE,
+      actorName: "agent-e"
+    });
+
+    const result = await changeTicketStatus({
+      ticketId: ticket.id,
+      toStatus: Status.IN_PROGRESS,
+      actorName: "agent-e"
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.ticket.status).toBe(Status.IN_PROGRESS);
+      expect(result.ticket.resolvedAt).toBeNull();
+    }
+  });
 });
