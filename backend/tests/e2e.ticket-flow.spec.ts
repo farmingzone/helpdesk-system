@@ -36,8 +36,14 @@ async function api(path: string, init?: RequestInit) {
     }
   });
 
-  const body = (await response.json()) as Record<string, unknown>;
-  return { status: response.status, body };
+  const rawBody = await response.text();
+  const body = rawBody.length > 0 ? (JSON.parse(rawBody) as Record<string, unknown>) : {};
+
+  return {
+    status: response.status,
+    body,
+    headers: response.headers
+  };
 }
 
 describe("E2E ticket flow", () => {
@@ -148,5 +154,42 @@ describe("E2E ticket flow", () => {
     expect(summary.status).toBe(200);
     expect(summary.body.completedCount).toBe(1);
     expect(summary.body).toHaveProperty("slaOver24HoursCompletedCount");
+  });
+
+  it("returns common error format and preserves x-request-id", async () => {
+    const created = await api("/api/tickets", {
+      method: "POST",
+      headers: {
+        "x-role": "ADMIN",
+        "x-user": "admin-e2e"
+      },
+      body: JSON.stringify({
+        title: "E2E forbidden",
+        description: "forbidden scenario",
+        requesterName: "user-e2e-c"
+      })
+    });
+    const ticketId = String(created.body.id);
+
+    const requestId = "e2e-custom-request-id";
+    const forbidden = await api(`/api/tickets/${ticketId}/status`, {
+      method: "PATCH",
+      headers: {
+        "x-role": "REQUESTER",
+        "x-user": "user-e2e-c",
+        "x-request-id": requestId
+      },
+      body: JSON.stringify({
+        toStatus: "IN_PROGRESS",
+        actorName: "user-e2e-c"
+      })
+    });
+
+    expect(forbidden.status).toBe(403);
+    expect(forbidden.headers.get("x-request-id")).toBe(requestId);
+    expect(forbidden.body.code).toBe("FORBIDDEN");
+    expect(forbidden.body.message).toBe("Forbidden");
+    expect(forbidden.body.requestId).toBe(requestId);
+    expect(typeof forbidden.body.timestamp).toBe("string");
   });
 });
