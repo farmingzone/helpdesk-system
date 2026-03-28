@@ -246,6 +246,35 @@ td {
   font-size: 13px;
 }
 
+.sla-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sla-badge.on_track {
+  background: #e9f8ef;
+  color: #1f7a3e;
+}
+
+.sla-badge.due_soon {
+  background: #fff3e5;
+  color: #a55b00;
+}
+
+.sla-badge.overdue {
+  background: #ffecec;
+  color: #b02a2a;
+}
+
+.sla-badge.resolved {
+  background: #eff3f8;
+  color: #50627b;
+}
+
 @media (max-width: 900px) {
   .two-col {
     grid-template-columns: 1fr;

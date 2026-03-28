@@ -2,6 +2,7 @@ import { Priority, Status } from "@prisma/client";
 import { UserRole } from "../auth/auth";
 import {
   addTicketComment,
+  appendOverdueEscalationHistories,
   createTicketWithCreatedHistory,
   findTicketDetailById,
   findTicketById,
@@ -10,6 +11,7 @@ import {
   updateTicketAssigneeWithHistory,
   updateTicketStatusWithHistory
 } from "./tickets.repository";
+import { calculateDueAt, getSlaStatus, SlaStatus } from "./tickets.sla";
 
 type CreateTicketParams = {
   title: string;
@@ -17,15 +19,33 @@ type CreateTicketParams = {
   requesterName: string;
   assigneeName?: string;
   priority?: Priority;
-  dueAt?: Date;
 };
 
+type TicketWithSla<T extends { status: Status; dueAt: Date | null }> = T & {
+  slaStatus: SlaStatus;
+};
+
+function toTicketWithSla<T extends { status: Status; dueAt: Date | null }>(ticket: T): TicketWithSla<T> {
+  return {
+    ...ticket,
+    slaStatus: getSlaStatus(ticket.status, ticket.dueAt)
+  };
+}
+
 export async function createTicket(params: CreateTicketParams) {
-  return createTicketWithCreatedHistory(params);
+  const priority = params.priority ?? Priority.MEDIUM;
+  const ticket = await createTicketWithCreatedHistory({
+    ...params,
+    priority,
+    dueAt: calculateDueAt(priority)
+  });
+  return toTicketWithSla(ticket);
 }
 
 export async function getTicketList(status?: Status) {
-  return listTickets(status);
+  await appendOverdueEscalationHistories();
+  const tickets = await listTickets(status);
+  return tickets.map(toTicketWithSla);
 }
 
 type TicketListFilters = {
@@ -38,7 +58,9 @@ type TicketListFilters = {
 };
 
 export async function getTicketListWithFilters(filters: TicketListFilters) {
-  return listTicketsWithFilters(filters);
+  await appendOverdueEscalationHistories();
+  const tickets = await listTicketsWithFilters(filters);
+  return tickets.map(toTicketWithSla);
 }
 
 type GetTicketDetailResult =
@@ -46,12 +68,13 @@ type GetTicketDetailResult =
   | { ok: false; code: 404; message: string };
 
 export async function getTicketDetail(ticketId: string): Promise<GetTicketDetailResult> {
+  await appendOverdueEscalationHistories();
   const ticket = await findTicketDetailById(ticketId);
   if (!ticket) {
     return { ok: false, code: 404, message: "Ticket not found" };
   }
 
-  return { ok: true, ticket };
+  return { ok: true, ticket: toTicketWithSla(ticket) };
 }
 
 export async function getTicketDetailWithAccess(
@@ -121,7 +144,8 @@ export async function changeTicketStatus(
     note: params.note
   });
 
-  return { ok: true, ticket: updatedTicket };
+  await appendOverdueEscalationHistories();
+  return { ok: true, ticket: toTicketWithSla(updatedTicket) };
 }
 
 type ChangeTicketAssigneeParams = {
@@ -159,7 +183,8 @@ export async function changeTicketAssignee(
     note: params.note
   });
 
-  return { ok: true, ticket: updatedTicket };
+  await appendOverdueEscalationHistories();
+  return { ok: true, ticket: toTicketWithSla(updatedTicket) };
 }
 
 type AddTicketCommentParams = {

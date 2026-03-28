@@ -17,6 +17,7 @@ enum Priority {
   LOW
   MEDIUM
   HIGH
+  URGENT
 }
 
 enum EventType {
@@ -24,6 +25,7 @@ enum EventType {
   STATUS_CHANGED
   COMMENT
   ASSIGNEE_CHANGED
+  OVERDUE_ESCALATED
 }
 
 model Ticket {

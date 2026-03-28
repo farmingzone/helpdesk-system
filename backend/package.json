@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
-    "test": "prisma db push --skip-generate && vitest run"
+    "test": "vitest run"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",

@@ -6,8 +6,8 @@ type CreateTicketInput = {
   description: string;
   requesterName: string;
   assigneeName?: string;
-  priority?: Priority;
-  dueAt?: Date;
+  priority: Priority;
+  dueAt: Date;
 };
 
 export async function createTicketWithCreatedHistory(input: CreateTicketInput) {
@@ -19,7 +19,7 @@ export async function createTicketWithCreatedHistory(input: CreateTicketInput) {
         requesterName: input.requesterName,
         assigneeName: input.assigneeName,
         status: Status.RECEIVED,
-        priority: input.priority ?? Priority.MEDIUM,
+        priority: input.priority,
         dueAt: input.dueAt
       }
     });
@@ -35,6 +35,45 @@ export async function createTicketWithCreatedHistory(input: CreateTicketInput) {
     });
 
     return ticket;
+  });
+}
+
+export async function appendOverdueEscalationHistories(now = new Date()) {
+  return prisma.$transaction(async (tx) => {
+    const overdueTickets = await tx.ticket.findMany({
+      where: {
+        status: {
+          not: Status.DONE
+        },
+        dueAt: {
+          lt: now
+        },
+        histories: {
+          none: {
+            eventType: EventType.OVERDUE_ESCALATED
+          }
+        }
+      },
+      select: {
+        id: true,
+        dueAt: true
+      }
+    });
+
+    if (overdueTickets.length === 0) {
+      return 0;
+    }
+
+    await tx.ticketHistory.createMany({
+      data: overdueTickets.map((ticket) => ({
+        ticketId: ticket.id,
+        actorName: "system",
+        eventType: EventType.OVERDUE_ESCALATED,
+        note: `SLA overdue at ${ticket.dueAt?.toISOString() ?? "unknown"}`
+      }))
+    });
+
+    return overdueTickets.length;
   });
 }
 

@@ -8,6 +8,7 @@ import {
   getTicketDetail,
   listTicketsWithFilters,
   Priority,
+  SlaStatus,
   Status,
   Ticket,
   TicketDetail
@@ -25,7 +26,15 @@ const STATUS_LABEL: Record<Status, string> = {
 const PRIORITY_LABEL: Record<Priority, string> = {
   LOW: "낮음",
   MEDIUM: "보통",
-  HIGH: "높음"
+  HIGH: "높음",
+  URGENT: "긴급"
+};
+
+const SLA_LABEL: Record<SlaStatus, string> = {
+  ON_TRACK: "정상",
+  DUE_SOON: "임박",
+  OVERDUE: "초과",
+  RESOLVED: "해결"
 };
 
 export function DashboardPage() {
@@ -49,7 +58,6 @@ export function DashboardPage() {
   const [createTitle, setCreateTitle] = useState("");
   const [createDescription, setCreateDescription] = useState("");
   const [createPriority, setCreatePriority] = useState<Priority>("MEDIUM");
-  const [createDueAt, setCreateDueAt] = useState("");
 
   const [changeActorName, setChangeActorName] = useState("");
   const [changeToStatus, setChangeToStatus] = useState<Status>("IN_PROGRESS");
@@ -129,15 +137,13 @@ export function DashboardPage() {
         assigneeName: createAssigneeName || undefined,
         title: createTitle,
         description: createDescription,
-        priority: createPriority,
-        dueAt: createDueAt ? new Date(createDueAt).toISOString() : undefined
+        priority: createPriority
       });
       setCreateRequesterName("");
       setCreateAssigneeName("");
       setCreateTitle("");
       setCreateDescription("");
       setCreatePriority("MEDIUM");
-      setCreateDueAt("");
       setMessage("티켓이 등록되었습니다.");
       await refreshAll();
     } catch (err) {
@@ -313,11 +319,8 @@ export function DashboardPage() {
               <option value="LOW">낮음</option>
               <option value="MEDIUM">보통</option>
               <option value="HIGH">높음</option>
+              <option value="URGENT">긴급</option>
             </select>
-          </label>
-          <label>
-            마감기한
-            <input type="datetime-local" value={createDueAt} onChange={(e) => setCreateDueAt(e.target.value)} />
           </label>
           <label className="full">
             제목
@@ -352,6 +355,7 @@ export function DashboardPage() {
               <option value="LOW">낮음</option>
               <option value="MEDIUM">보통</option>
               <option value="HIGH">높음</option>
+              <option value="URGENT">긴급</option>
             </select>
           </label>
           <label>
@@ -385,13 +389,14 @@ export function DashboardPage() {
               <th>우선순위</th>
               <th>상태</th>
               <th>기한</th>
+              <th>SLA</th>
               <th>상세</th>
             </tr>
           </thead>
           <tbody>
             {tickets.length === 0 && (
               <tr>
-                <td colSpan={8}>조건에 맞는 티켓이 없습니다.</td>
+                <td colSpan={9}>조건에 맞는 티켓이 없습니다.</td>
               </tr>
             )}
             {tickets.map((ticket) => (
@@ -403,6 +408,11 @@ export function DashboardPage() {
                 <td>{PRIORITY_LABEL[ticket.priority]}</td>
                 <td>{STATUS_LABEL[ticket.status]}</td>
                 <td>{ticket.dueAt ? new Date(ticket.dueAt).toLocaleString() : "-"}</td>
+                <td>
+                  <span className={`sla-badge ${ticket.slaStatus.toLowerCase()}`}>
+                    {SLA_LABEL[ticket.slaStatus]}
+                  </span>
+                </td>
                 <td>
                   <button type="button" onClick={() => void onOpenDetail(ticket.id)}>
                     보기
@@ -511,6 +521,12 @@ export function DashboardPage() {
               <span>담당자: {detail.assigneeName ?? "-"}</span>
               <span>우선순위: {PRIORITY_LABEL[detail.priority]}</span>
               <span>상태: {STATUS_LABEL[detail.status]}</span>
+              <span>
+                SLA:
+                {" "}
+                <span className={`sla-badge ${detail.slaStatus.toLowerCase()}`}>{SLA_LABEL[detail.slaStatus]}</span>
+              </span>
+              <span>기한: {detail.dueAt ? new Date(detail.dueAt).toLocaleString() : "-"}</span>
             </div>
             <table>
               <thead>

@@ -1,7 +1,8 @@
 import { apiRequest } from "./client";
 
 export type Status = "RECEIVED" | "IN_PROGRESS" | "DONE";
-export type Priority = "LOW" | "MEDIUM" | "HIGH";
+export type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+export type SlaStatus = "ON_TRACK" | "DUE_SOON" | "OVERDUE" | "RESOLVED";
 
 export type Ticket = {
   id: string;
@@ -12,6 +13,7 @@ export type Ticket = {
   status: Status;
   priority: Priority;
   dueAt: string | null;
+  slaStatus: SlaStatus;
   createdAt: string;
   updatedAt: string;
   resolvedAt: string | null;
@@ -21,7 +23,7 @@ export type TicketHistory = {
   id: string;
   ticketId: string;
   actorName: string;
-  eventType: "CREATED" | "STATUS_CHANGED" | "COMMENT" | "ASSIGNEE_CHANGED";
+  eventType: "CREATED" | "STATUS_CHANGED" | "COMMENT" | "ASSIGNEE_CHANGED" | "OVERDUE_ESCALATED";
   fromStatus: Status | null;
   toStatus: Status | null;
   note: string | null;
@@ -38,7 +40,6 @@ export async function createTicket(payload: {
   requesterName: string;
   assigneeName?: string;
   priority?: Priority;
-  dueAt?: string;
 }) {
   return apiRequest<Ticket>("/api/tickets", {
     method: "POST",
