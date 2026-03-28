@@ -23,7 +23,8 @@ const createTicketSchema = z.object({
   description: z.string().min(1),
   requesterName: z.string().min(1),
   assigneeName: z.string().min(1).optional(),
-  priority: z.nativeEnum(Priority).optional()
+  priority: z.nativeEnum(Priority).optional(),
+  dueAt: z.string().datetime().optional()
 });
 
 const statusQuerySchema = z.object({
@@ -112,7 +113,8 @@ ticketsRouter.post("/", async (req, res, next) => {
     const ticket = await createTicket({
       ...body,
       requesterName,
-      assigneeName: user.role === "REQUESTER" ? undefined : body.assigneeName
+      assigneeName: user.role === "REQUESTER" ? undefined : body.assigneeName,
+      dueAt: body.dueAt ? new Date(body.dueAt) : undefined
     });
     return res.status(201).json(ticket);
   } catch (err) {

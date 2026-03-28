@@ -25,6 +25,7 @@ type CreateTicketParams = {
   requesterName: string;
   assigneeName?: string;
   priority?: Priority;
+  dueAt?: Date;
 };
 
 type TicketWithSla<T extends { status: Status; dueAt: Date | null }> = T & {
@@ -43,7 +44,7 @@ export async function createTicket(params: CreateTicketParams) {
   const ticket = await createTicketWithCreatedHistory({
     ...params,
     priority,
-    dueAt: calculateDueAt(priority)
+    dueAt: params.dueAt ?? calculateDueAt(priority)
   });
   return toTicketWithSla(ticket);
 }

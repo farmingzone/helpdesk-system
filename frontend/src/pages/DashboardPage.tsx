@@ -64,6 +64,7 @@ export function DashboardPage() {
   const [createTitle, setCreateTitle] = useState("");
   const [createDescription, setCreateDescription] = useState("");
   const [createPriority, setCreatePriority] = useState<Priority>("MEDIUM");
+  const [createDueAt, setCreateDueAt] = useState("");
 
   const [changeActorName, setChangeActorName] = useState("");
   const [changeToStatus, setChangeToStatus] = useState<Status>("IN_PROGRESS");
@@ -149,13 +150,15 @@ export function DashboardPage() {
         assigneeName: createAssigneeName || undefined,
         title: createTitle,
         description: createDescription,
-        priority: createPriority
+        priority: createPriority,
+        dueAt: createDueAt ? new Date(createDueAt).toISOString() : undefined
       });
       setCreateRequesterName("");
       setCreateAssigneeName("");
       setCreateTitle("");
       setCreateDescription("");
       setCreatePriority("MEDIUM");
+      setCreateDueAt("");
       setMessage("티켓이 등록되었습니다.");
       await refreshAll();
     } catch (err) {
@@ -389,6 +392,15 @@ export function DashboardPage() {
               <option value="HIGH">높음</option>
               <option value="URGENT">긴급</option>
             </select>
+          </label>
+          <label>
+            마감기한
+            <input
+              data-testid="create-due-at-input"
+              type="datetime-local"
+              value={createDueAt}
+              onChange={(e) => setCreateDueAt(e.target.value)}
+            />
           </label>
           <label className="full">
             제목

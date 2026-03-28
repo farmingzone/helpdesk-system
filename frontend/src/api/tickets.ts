@@ -52,6 +52,7 @@ export async function createTicket(payload: {
   requesterName: string;
   assigneeName?: string;
   priority?: Priority;
+  dueAt?: string;
 }) {
   return apiRequest<Ticket>("/api/tickets", {
     method: "POST",
