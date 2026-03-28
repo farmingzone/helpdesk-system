@@ -1,6 +1,14 @@
 # Changelog (Compact)
 
 ## 2026-03-28
+- Playwright E2E 테스트 도입
+  - `frontend/playwright.config.ts` 추가
+  - 시나리오 3종 자동화
+    - 티켓 생성 -> 담당자 지정 -> 완료
+    - `REQUESTER` 상태/담당자 변경 차단
+    - 지연 건수/지연 필터 반영 확인
+  - 실패 시 스크린샷/트레이스/비디오 보존 설정
+  - 루트 `npm run test:e2e` 스크립트 추가
 - 브랜치 `codex/advanced-v2` 생성
 - 담당자 기능 추가
   - `Ticket.assigneeName`

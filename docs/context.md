@@ -72,9 +72,13 @@
   - `cd frontend`
   - `npm run build`
   - `npm run dev`
+  - `npx playwright install chromium`
+  - `npm run test:e2e`
+- root
+  - `npm run test:e2e`
 
 ## 9) 다음 작업 후보
 - 첨부파일(로컬 저장) 기능
 - SLA 정책 화면화(기한 임박/초과 배지)
 - 권한 모델 고도화(요청자별 읽기/쓰기 세분화)
-- E2E 브라우저 테스트 도입
+- E2E 브라우저 테스트 CI 연동
