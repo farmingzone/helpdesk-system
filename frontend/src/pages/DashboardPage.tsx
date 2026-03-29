@@ -469,18 +469,20 @@ export function DashboardPage() {
             키워드
             <input value={keywordFilter} onChange={(e) => setKeywordFilter(e.target.value)} />
           </label>
-          <label className="checkbox">
-            <input
-              data-testid="overdue-only-checkbox"
-              type="checkbox"
-              checked={overdueOnly}
-              onChange={(e) => setOverdueOnly(e.target.checked)}
-            />
-            지연 건만 보기
-          </label>
-          <button className="filter-submit" type="button" onClick={() => void refreshAll()}>
-            조회
-          </button>
+          <div className="filter-actions">
+            <label className="checkbox">
+              <input
+                data-testid="overdue-only-checkbox"
+                type="checkbox"
+                checked={overdueOnly}
+                onChange={(e) => setOverdueOnly(e.target.checked)}
+              />
+              지연 건만 보기
+            </label>
+            <button className="filter-submit" type="button" onClick={() => void refreshAll()}>
+              조회
+            </button>
+          </div>
         </div>
 
         <div className="table-wrap">
