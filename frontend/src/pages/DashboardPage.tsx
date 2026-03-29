@@ -17,7 +17,7 @@ import {
   TicketDetail,
   uploadTicketAttachment
 } from "../api/tickets";
-import { getResolutionSummary } from "../api/stats";
+import { getResolutionSummary, ResolutionSummary } from "../api/stats";
 
 type Role = "ADMIN" | "AGENT" | "REQUESTER";
 
@@ -40,6 +40,28 @@ const SLA_LABEL: Record<SlaStatus, string> = {
   OVERDUE: "초과",
   RESOLVED: "해결"
 };
+
+const INITIAL_SUMMARY: ResolutionSummary = {
+  completedCount: 0,
+  averageResolutionMinutes: 0,
+  medianResolutionMinutes: 0,
+  slaOver24HoursCompletedCount: 0,
+  statusCounts: {
+    RECEIVED: 0,
+    IN_PROGRESS: 0,
+    DONE: 0
+  },
+  todayCompletedCount: 0,
+  overdueCount: 0,
+  unassignedOpenCount: 0,
+  highPriorityOpenCount: 0,
+  attentionOpenCount: 0,
+  dailyCompleted: []
+};
+
+function getErrorMessage(err: unknown) {
+  return err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
+}
 
 export function DashboardPage() {
   const [role, setRole] = useState<Role>("ADMIN");
@@ -77,23 +99,7 @@ export function DashboardPage() {
   const [toAssigneeName, setToAssigneeName] = useState("");
   const [assigneeNote, setAssigneeNote] = useState("");
 
-  const [summary, setSummary] = useState({
-    completedCount: 0,
-    averageResolutionMinutes: 0,
-    medianResolutionMinutes: 0,
-    slaOver24HoursCompletedCount: 0,
-    statusCounts: {
-      RECEIVED: 0,
-      IN_PROGRESS: 0,
-      DONE: 0
-    },
-    todayCompletedCount: 0,
-    overdueCount: 0,
-    unassignedOpenCount: 0,
-    highPriorityOpenCount: 0,
-    attentionOpenCount: 0,
-    dailyCompleted: [] as Array<{ date: string; count: number }>
-  });
+  const [summary, setSummary] = useState<ResolutionSummary>(INITIAL_SUMMARY);
 
   const selectedTicket = useMemo(
     () => tickets.find((ticket) => ticket.id === selectedTicketId) ?? null,
@@ -112,6 +118,32 @@ export function DashboardPage() {
   useEffect(() => {
     void refreshAll();
   }, [role, userName, statusFilter, priorityFilter, overdueOnly]);
+
+  function getSelectedTicketIdOrNotify() {
+    if (!selectedTicketId) {
+      setMessage("먼저 티켓을 선택하세요.");
+      return null;
+    }
+    return selectedTicketId;
+  }
+
+  async function runAction(
+    action: () => Promise<void>,
+    options?: { successMessage?: string; refreshAfter?: boolean }
+  ) {
+    // Centralize repetitive async UI flow: execute -> toast/message -> optional refresh.
+    try {
+      await action();
+      if (options?.successMessage) {
+        setMessage(options.successMessage);
+      }
+      if (options?.refreshAfter) {
+        await refreshAll();
+      }
+    } catch (err) {
+      setMessage(getErrorMessage(err));
+    }
+  }
 
   async function refreshAll() {
     try {
@@ -138,13 +170,13 @@ export function DashboardPage() {
         setAttachments(updatedAttachments);
       }
     } catch (err) {
-      setMessage((err as Error).message);
+      setMessage(getErrorMessage(err));
     }
   }
 
   async function onCreateTicket(e: FormEvent) {
     e.preventDefault();
-    try {
+    await runAction(async () => {
       await createTicket({
         requesterName: createRequesterName,
         assigneeName: createAssigneeName || undefined,
@@ -159,73 +191,57 @@ export function DashboardPage() {
       setCreateDescription("");
       setCreatePriority("MEDIUM");
       setCreateDueAt("");
-      setMessage("티켓이 등록되었습니다.");
-      await refreshAll();
-    } catch (err) {
-      setMessage((err as Error).message);
-    }
+    }, { successMessage: "티켓이 등록되었습니다.", refreshAfter: true });
   }
 
   async function onChangeStatus(e: FormEvent) {
     e.preventDefault();
-    if (!selectedTicketId) {
-      setMessage("먼저 티켓을 선택하세요.");
+    const ticketId = getSelectedTicketIdOrNotify();
+    if (!ticketId) {
       return;
     }
-    try {
+    await runAction(async () => {
       await changeTicketStatus({
-        ticketId: selectedTicketId,
+        ticketId,
         toStatus: changeToStatus,
         actorName: changeActorName,
         note: changeNote || undefined
       });
       setChangeNote("");
-      setMessage("상태가 변경되었습니다.");
-      await refreshAll();
-    } catch (err) {
-      setMessage((err as Error).message);
-    }
+    }, { successMessage: "상태가 변경되었습니다.", refreshAfter: true });
   }
 
   async function onAddComment(e: FormEvent) {
     e.preventDefault();
-    if (!selectedTicketId) {
-      setMessage("먼저 티켓을 선택하세요.");
+    const ticketId = getSelectedTicketIdOrNotify();
+    if (!ticketId) {
       return;
     }
-    try {
+    await runAction(async () => {
       await addTicketComment({
-        ticketId: selectedTicketId,
+        ticketId,
         actorName: commentActorName,
         note: commentNote
       });
       setCommentNote("");
-      setMessage("코멘트가 등록되었습니다.");
-      await refreshAll();
-    } catch (err) {
-      setMessage((err as Error).message);
-    }
+    }, { successMessage: "코멘트가 등록되었습니다.", refreshAfter: true });
   }
 
   async function onChangeAssignee(e: FormEvent) {
     e.preventDefault();
-    if (!selectedTicketId) {
-      setMessage("먼저 티켓을 선택하세요.");
+    const ticketId = getSelectedTicketIdOrNotify();
+    if (!ticketId) {
       return;
     }
-    try {
+    await runAction(async () => {
       await changeTicketAssignee({
-        ticketId: selectedTicketId,
+        ticketId,
         actorName: assigneeActorName,
         toAssigneeName: toAssigneeName.trim() ? toAssigneeName.trim() : null,
         note: assigneeNote || undefined
       });
       setAssigneeNote("");
-      setMessage("담당자가 변경되었습니다.");
-      await refreshAll();
-    } catch (err) {
-      setMessage((err as Error).message);
-    }
+    }, { successMessage: "담당자가 변경되었습니다.", refreshAfter: true });
   }
 
   async function onOpenDetail(ticketId: string) {
@@ -239,14 +255,14 @@ export function DashboardPage() {
       setAttachments(attachmentList);
       setMessage("");
     } catch (err) {
-      setMessage((err as Error).message);
+      setMessage(getErrorMessage(err));
     }
   }
 
   async function onUploadAttachment(e: FormEvent) {
     e.preventDefault();
-    if (!selectedTicketId) {
-      setMessage("먼저 티켓을 선택하세요.");
+    const ticketId = getSelectedTicketIdOrNotify();
+    if (!ticketId) {
       return;
     }
 
@@ -255,35 +271,28 @@ export function DashboardPage() {
       return;
     }
 
-    try {
+    await runAction(async () => {
       await uploadTicketAttachment({
-        ticketId: selectedTicketId,
+        ticketId,
         file: attachmentFile
       });
       setAttachmentFile(null);
-      setMessage("첨부파일이 업로드되었습니다.");
-      await refreshAll();
-    } catch (err) {
-      setMessage((err as Error).message);
-    }
+    }, { successMessage: "첨부파일이 업로드되었습니다.", refreshAfter: true });
   }
 
   async function onDownloadAttachment(attachment: TicketAttachment) {
-    if (!selectedTicketId) {
-      setMessage("먼저 티켓을 선택하세요.");
+    const ticketId = getSelectedTicketIdOrNotify();
+    if (!ticketId) {
       return;
     }
 
-    try {
+    await runAction(async () => {
       await downloadTicketAttachment({
-        ticketId: selectedTicketId,
+        ticketId,
         attachmentId: attachment.id,
         fileName: attachment.normalizedName
       });
-      setMessage("첨부파일 다운로드를 시작했습니다.");
-    } catch (err) {
-      setMessage((err as Error).message);
-    }
+    }, { successMessage: "첨부파일 다운로드를 시작했습니다." });
   }
 
   return (

@@ -77,17 +77,6 @@ export async function appendOverdueEscalationHistories(now = new Date()) {
   });
 }
 
-export async function listTickets(status?: Status) {
-  const where: Prisma.TicketWhereInput = status ? { status } : {};
-
-  return prisma.ticket.findMany({
-    where,
-    orderBy: {
-      createdAt: "desc"
-    }
-  });
-}
-
 type ListTicketFilters = {
   status?: Status;
   requesterName?: string;

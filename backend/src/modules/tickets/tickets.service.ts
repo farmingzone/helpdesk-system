@@ -12,7 +12,6 @@ import {
   findTicketDetailById,
   findTicketById,
   listTicketAttachments,
-  listTickets,
   listTicketsWithFilters,
   updateTicketAssigneeWithHistory,
   updateTicketStatusWithHistory
@@ -39,6 +38,15 @@ function toTicketWithSla<T extends { status: Status; dueAt: Date | null }>(ticke
   };
 }
 
+function notFoundResult() {
+  return { ok: false as const, code: 404 as const, message: "Ticket not found" };
+}
+
+async function findExistingTicket(ticketId: string) {
+  const ticket = await findTicketById(ticketId);
+  return ticket ?? null;
+}
+
 export async function createTicket(params: CreateTicketParams) {
   const priority = params.priority ?? Priority.MEDIUM;
   const ticket = await createTicketWithCreatedHistory({
@@ -47,12 +55,6 @@ export async function createTicket(params: CreateTicketParams) {
     dueAt: params.dueAt ?? calculateDueAt(priority)
   });
   return toTicketWithSla(ticket);
-}
-
-export async function getTicketList(status?: Status) {
-  await appendOverdueEscalationHistories();
-  const tickets = await listTickets(status);
-  return tickets.map(toTicketWithSla);
 }
 
 type TicketListFilters = {
@@ -121,9 +123,9 @@ const ALLOWED_TRANSITIONS: Record<Status, Status[]> = {
 export async function changeTicketStatus(
   params: ChangeTicketStatusParams
 ): Promise<ChangeTicketStatusResult> {
-  const currentTicket = await findTicketById(params.ticketId);
+  const currentTicket = await findExistingTicket(params.ticketId);
   if (!currentTicket) {
-    return { ok: false, code: 404, message: "Ticket not found" };
+    return notFoundResult();
   }
 
   if (currentTicket.status === params.toStatus) {
@@ -169,9 +171,9 @@ type ChangeTicketAssigneeResult =
 export async function changeTicketAssignee(
   params: ChangeTicketAssigneeParams
 ): Promise<ChangeTicketAssigneeResult> {
-  const currentTicket = await findTicketById(params.ticketId);
+  const currentTicket = await findExistingTicket(params.ticketId);
   if (!currentTicket) {
-    return { ok: false, code: 404, message: "Ticket not found" };
+    return notFoundResult();
   }
 
   const currentAssignee = currentTicket.assigneeName ?? null;
@@ -207,9 +209,9 @@ type AddTicketCommentResult =
 export async function addCommentToTicket(
   params: AddTicketCommentParams
 ): Promise<AddTicketCommentResult> {
-  const ticket = await findTicketById(params.ticketId);
-  if (!ticket) {
-    return { ok: false, code: 404, message: "Ticket not found" };
+  const existing = await findExistingTicket(params.ticketId);
+  if (!existing) {
+    return notFoundResult();
   }
 
   const comment = await addTicketComment({
@@ -267,6 +269,7 @@ type DownloadTicketAttachmentResult =
 function normalizeFileName(originalName: string) {
   const ext = path.extname(originalName).toLowerCase();
   const baseName = path.basename(originalName, ext);
+  // Keep stored metadata predictable and avoid unsafe/surprising file names.
   const normalizedBase = baseName
     .trim()
     .toLowerCase()
@@ -340,6 +343,7 @@ export async function uploadTicketAttachment(
 
     return { ok: true, attachment };
   } catch (error) {
+    // DB write failure after disk write should not leave orphan files behind.
     await fs.unlink(absolutePath).catch(() => undefined);
     throw error;
   }
