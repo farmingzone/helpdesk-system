@@ -371,7 +371,7 @@ export function DashboardPage() {
 
       <section className="panel">
         <h2>티켓 등록</h2>
-        <form className="form-grid" onSubmit={onCreateTicket}>
+        <form className="form-grid create-grid" onSubmit={onCreateTicket}>
           <label>
             요청자
             <input
@@ -424,7 +424,12 @@ export function DashboardPage() {
               rows={3}
             />
           </label>
-          <button data-testid="create-submit-button" type="submit" disabled={!createRequesterName || !createTitle || !createDescription}>
+          <button
+            className="form-submit"
+            data-testid="create-submit-button"
+            type="submit"
+            disabled={!createRequesterName || !createTitle || !createDescription}
+          >
             티켓 등록
           </button>
         </form>
@@ -432,7 +437,7 @@ export function DashboardPage() {
 
       <section className="panel">
         <h2>티켓 목록/검색</h2>
-        <div className="row wrap">
+        <div className="filters-grid">
           <label>
             상태
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as Status | "ALL")}>
@@ -460,7 +465,7 @@ export function DashboardPage() {
             담당자
             <input value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} />
           </label>
-          <label>
+          <label className="keyword">
             키워드
             <input value={keywordFilter} onChange={(e) => setKeywordFilter(e.target.value)} />
           </label>
@@ -473,7 +478,7 @@ export function DashboardPage() {
             />
             지연 건만 보기
           </label>
-          <button type="button" onClick={() => void refreshAll()}>
+          <button className="filter-submit" type="button" onClick={() => void refreshAll()}>
             조회
           </button>
         </div>
@@ -528,7 +533,7 @@ export function DashboardPage() {
       <section className="panel two-col">
         <div>
           <h2>상태 변경</h2>
-          <form className="form-grid" onSubmit={onChangeStatus}>
+          <form className="form-grid action-form" onSubmit={onChangeStatus}>
             <label>
               티켓
               <select data-testid="status-ticket-select" value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
@@ -551,27 +556,27 @@ export function DashboardPage() {
                 <option value="DONE">완료</option>
               </select>
             </label>
-            <label>
+            <label className="full">
               메모
               <input value={changeNote} onChange={(e) => setChangeNote(e.target.value)} />
             </label>
-            <button data-testid="status-submit-button" type="submit" disabled={!selectedTicketId || !changeActorName}>
+            <button className="form-submit" data-testid="status-submit-button" type="submit" disabled={!selectedTicketId || !changeActorName}>
               상태 변경 저장
             </button>
           </form>
         </div>
         <div>
           <h2>코멘트 추가</h2>
-          <form className="form-grid" onSubmit={onAddComment}>
+          <form className="form-grid action-form" onSubmit={onAddComment}>
             <label>
               작성자
               <input value={commentActorName} onChange={(e) => setCommentActorName(e.target.value)} />
             </label>
-            <label>
+            <label className="full">
               코멘트
               <textarea value={commentNote} onChange={(e) => setCommentNote(e.target.value)} rows={3} />
             </label>
-            <button type="submit" disabled={!selectedTicketId || !commentActorName || !commentNote}>
+            <button className="form-submit" type="submit" disabled={!selectedTicketId || !commentActorName || !commentNote}>
               코멘트 등록
             </button>
           </form>
@@ -580,7 +585,7 @@ export function DashboardPage() {
 
       <section className="panel">
         <h2>담당자 지정/변경</h2>
-        <form className="form-grid" onSubmit={onChangeAssignee}>
+        <form className="form-grid action-form" onSubmit={onChangeAssignee}>
           <label>
             티켓
             <select data-testid="assignee-ticket-select" value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
@@ -605,11 +610,11 @@ export function DashboardPage() {
               placeholder="비우면 미배정"
             />
           </label>
-          <label>
+          <label className="full">
             메모
             <input value={assigneeNote} onChange={(e) => setAssigneeNote(e.target.value)} />
           </label>
-          <button data-testid="assignee-submit-button" type="submit" disabled={!selectedTicketId || !assigneeActorName}>
+          <button className="form-submit" data-testid="assignee-submit-button" type="submit" disabled={!selectedTicketId || !assigneeActorName}>
             담당자 변경 저장
           </button>
         </form>

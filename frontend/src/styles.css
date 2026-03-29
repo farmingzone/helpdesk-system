@@ -207,10 +207,41 @@ button:disabled {
   min-height: 44px;
 }
 
+.form-submit {
+  width: fit-content;
+  min-width: 140px;
+  justify-self: start;
+}
+
+.create-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: 120px 120px 1fr 1fr 1.25fr auto auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.filters-grid .keyword {
+  min-width: 220px;
+}
+
+.filter-submit {
+  min-width: 88px;
+}
+
+.action-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .checkbox {
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+  align-self: center;
 }
 
 .checkbox input {
@@ -341,6 +372,16 @@ td {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .create-grid,
+  .action-form,
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-grid .keyword {
+    min-width: 0;
   }
 
   .row {
