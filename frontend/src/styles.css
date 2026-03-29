@@ -218,14 +218,24 @@ button:disabled {
 }
 
 .filters-grid {
-  display: grid;
-  grid-template-columns: 120px 120px 1fr 1fr 1.25fr auto;
+  display: flex;
   gap: 12px;
   align-items: end;
+  flex-wrap: nowrap;
+}
+
+.filters-grid > label {
+  flex: 1 1 0;
+}
+
+.filters-grid > label:nth-child(1),
+.filters-grid > label:nth-child(2) {
+  flex: 0 0 120px;
 }
 
 .filters-grid .keyword {
-  min-width: 220px;
+  flex: 1.2 1 0;
+  min-width: 200px;
 }
 
 .filter-submit {
@@ -236,16 +246,26 @@ button:disabled {
   display: flex;
   gap: 12px;
   align-items: center;
-  justify-self: end;
+  margin-left: auto;
+  flex: 0 0 auto;
 }
 
 .action-form {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.action-form .compact-primary {
+  grid-column: 1 / span 2;
+}
+
+.action-form .compact-note {
+  grid-column: 1 / span 2;
+}
+
 .action-form .form-submit {
-  grid-column: 1 / -1;
+  grid-column: 3;
   justify-self: end;
+  align-self: end;
 }
 
 .checkbox {
@@ -387,18 +407,24 @@ td {
   }
 
   .create-grid,
-  .action-form,
-  .filters-grid {
+  .action-form {
     grid-template-columns: 1fr;
   }
 
   .filter-actions {
-    justify-self: start;
+    margin-left: 0;
     flex-wrap: wrap;
   }
 
-  .filters-grid .keyword {
+  .filters-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .filters-grid .keyword,
+  .filters-grid > label {
     min-width: 0;
+    flex: 1 1 auto;
   }
 
   .row {
@@ -414,7 +440,39 @@ td {
     height: auto;
   }
 
+  .action-form .compact-primary,
+  .action-form .compact-note,
+  .action-form .form-submit {
+    grid-column: auto;
+    justify-self: start;
+  }
+
   .table-wrap table {
     min-width: 720px;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .filters-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .filters-grid > label {
+    flex: 1 1 auto;
+    min-width: 0;
+    grid-column: span 2;
+  }
+
+  .filters-grid .keyword {
+    grid-column: span 2;
+    min-width: 0;
+  }
+
+  .filter-actions {
+    grid-column: span 2;
+    margin-left: 0;
+    justify-self: end;
   }
 }

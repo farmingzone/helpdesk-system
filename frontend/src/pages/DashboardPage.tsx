@@ -535,7 +535,7 @@ export function DashboardPage() {
       <section className="panel two-col">
         <div>
           <h2>상태 변경</h2>
-          <form className="form-grid action-form" onSubmit={onChangeStatus}>
+          <form className="form-grid action-form status-form" onSubmit={onChangeStatus}>
             <label>
               티켓
               <select data-testid="status-ticket-select" value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
@@ -558,7 +558,7 @@ export function DashboardPage() {
                 <option value="DONE">완료</option>
               </select>
             </label>
-            <label className="full">
+            <label className="compact-note">
               메모
               <input value={changeNote} onChange={(e) => setChangeNote(e.target.value)} />
             </label>
@@ -569,12 +569,12 @@ export function DashboardPage() {
         </div>
         <div>
           <h2>코멘트 추가</h2>
-          <form className="form-grid action-form" onSubmit={onAddComment}>
-            <label>
+          <form className="form-grid action-form comment-form" onSubmit={onAddComment}>
+            <label className="compact-primary">
               작성자
               <input value={commentActorName} onChange={(e) => setCommentActorName(e.target.value)} />
             </label>
-            <label className="full">
+            <label className="compact-note">
               코멘트
               <textarea value={commentNote} onChange={(e) => setCommentNote(e.target.value)} rows={3} />
             </label>
@@ -587,7 +587,7 @@ export function DashboardPage() {
 
       <section className="panel">
         <h2>담당자 지정/변경</h2>
-        <form className="form-grid action-form" onSubmit={onChangeAssignee}>
+        <form className="form-grid action-form assignee-form" onSubmit={onChangeAssignee}>
           <label>
             티켓
             <select data-testid="assignee-ticket-select" value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
@@ -612,7 +612,7 @@ export function DashboardPage() {
               placeholder="비우면 미배정"
             />
           </label>
-          <label className="full">
+          <label className="compact-note">
             메모
             <input value={assigneeNote} onChange={(e) => setAssigneeNote(e.target.value)} />
           </label>
