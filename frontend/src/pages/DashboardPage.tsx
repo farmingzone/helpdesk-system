@@ -469,49 +469,51 @@ export function DashboardPage() {
           </button>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>티켓</th>
-              <th>제목</th>
-              <th>요청자</th>
-              <th>담당자</th>
-              <th>우선순위</th>
-              <th>상태</th>
-              <th>기한</th>
-              <th>SLA</th>
-              <th>상세</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tickets.length === 0 && (
+        <div className="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <td colSpan={9}>조건에 맞는 티켓이 없습니다.</td>
+                <th>티켓</th>
+                <th>제목</th>
+                <th>요청자</th>
+                <th>담당자</th>
+                <th>우선순위</th>
+                <th>상태</th>
+                <th>기한</th>
+                <th>SLA</th>
+                <th>상세</th>
               </tr>
-            )}
-            {tickets.map((ticket) => (
-              <tr key={ticket.id} data-testid={`ticket-row-${ticket.id}`}>
-                <td>{ticket.id.slice(0, 8)}</td>
-                <td>{ticket.title}</td>
-                <td>{ticket.requesterName}</td>
-                <td>{ticket.assigneeName ?? "-"}</td>
-                <td>{PRIORITY_LABEL[ticket.priority]}</td>
-                <td>{STATUS_LABEL[ticket.status]}</td>
-                <td>{ticket.dueAt ? new Date(ticket.dueAt).toLocaleString() : "-"}</td>
-                <td>
-                  <span className={`sla-badge ${ticket.slaStatus.toLowerCase()}`}>
-                    {SLA_LABEL[ticket.slaStatus]}
-                  </span>
-                </td>
-                <td>
-                  <button data-testid={`open-detail-${ticket.id}`} type="button" onClick={() => void onOpenDetail(ticket.id)}>
-                    보기
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tickets.length === 0 && (
+                <tr>
+                  <td colSpan={9}>조건에 맞는 티켓이 없습니다.</td>
+                </tr>
+              )}
+              {tickets.map((ticket) => (
+                <tr key={ticket.id} data-testid={`ticket-row-${ticket.id}`}>
+                  <td>{ticket.id.slice(0, 8)}</td>
+                  <td>{ticket.title}</td>
+                  <td>{ticket.requesterName}</td>
+                  <td>{ticket.assigneeName ?? "-"}</td>
+                  <td>{PRIORITY_LABEL[ticket.priority]}</td>
+                  <td>{STATUS_LABEL[ticket.status]}</td>
+                  <td>{ticket.dueAt ? new Date(ticket.dueAt).toLocaleString() : "-"}</td>
+                  <td>
+                    <span className={`sla-badge ${ticket.slaStatus.toLowerCase()}`}>
+                      {SLA_LABEL[ticket.slaStatus]}
+                    </span>
+                  </td>
+                  <td>
+                    <button data-testid={`open-detail-${ticket.id}`} type="button" onClick={() => void onOpenDetail(ticket.id)}>
+                      보기
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="panel two-col">
@@ -623,30 +625,32 @@ export function DashboardPage() {
               </span>
               <span>기한: {detail.dueAt ? new Date(detail.dueAt).toLocaleString() : "-"}</span>
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>시각</th>
-                  <th>이벤트</th>
-                  <th>작성자</th>
-                  <th>from</th>
-                  <th>to</th>
-                  <th>메모</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.histories.map((history) => (
-                  <tr key={history.id}>
-                    <td>{new Date(history.createdAt).toLocaleString()}</td>
-                    <td>{history.eventType}</td>
-                    <td>{history.actorName}</td>
-                    <td>{history.fromStatus ? STATUS_LABEL[history.fromStatus] : "-"}</td>
-                    <td>{history.toStatus ? STATUS_LABEL[history.toStatus] : "-"}</td>
-                    <td>{history.note ?? "-"}</td>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>시각</th>
+                    <th>이벤트</th>
+                    <th>작성자</th>
+                    <th>from</th>
+                    <th>to</th>
+                    <th>메모</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {detail.histories.map((history) => (
+                    <tr key={history.id}>
+                      <td>{new Date(history.createdAt).toLocaleString()}</td>
+                      <td>{history.eventType}</td>
+                      <td>{history.actorName}</td>
+                      <td>{history.fromStatus ? STATUS_LABEL[history.fromStatus] : "-"}</td>
+                      <td>{history.toStatus ? STATUS_LABEL[history.toStatus] : "-"}</td>
+                      <td>{history.note ?? "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <h3>첨부파일</h3>
             <form className="row wrap" onSubmit={onUploadAttachment}>
               <input
@@ -660,32 +664,34 @@ export function DashboardPage() {
             {attachments.length === 0 ? (
               <p className="hint">등록된 첨부파일이 없습니다.</p>
             ) : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>파일명</th>
-                    <th>용량</th>
-                    <th>업로드자</th>
-                    <th>업로드 시각</th>
-                    <th>다운로드</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {attachments.map((attachment) => (
-                    <tr key={attachment.id}>
-                      <td>{attachment.normalizedName}</td>
-                      <td>{(attachment.sizeBytes / 1024).toFixed(1)} KB</td>
-                      <td>{attachment.uploadedBy}</td>
-                      <td>{new Date(attachment.createdAt).toLocaleString()}</td>
-                      <td>
-                        <button type="button" onClick={() => void onDownloadAttachment(attachment)}>
-                          받기
-                        </button>
-                      </td>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>파일명</th>
+                      <th>용량</th>
+                      <th>업로드자</th>
+                      <th>업로드 시각</th>
+                      <th>다운로드</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {attachments.map((attachment) => (
+                      <tr key={attachment.id}>
+                        <td>{attachment.normalizedName}</td>
+                        <td>{(attachment.sizeBytes / 1024).toFixed(1)} KB</td>
+                        <td>{attachment.uploadedBy}</td>
+                        <td>{new Date(attachment.createdAt).toLocaleString()}</td>
+                        <td>
+                          <button type="button" onClick={() => void onDownloadAttachment(attachment)}>
+                            받기
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </>
         )}

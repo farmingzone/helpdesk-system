@@ -18,6 +18,8 @@
 body {
   margin: 0;
   font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
   background: radial-gradient(circle at 10% 0%, #eef4ff 0%, var(--bg) 45%);
   color: var(--text);
 }
@@ -38,12 +40,13 @@ body {
 
 .hero h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 32px;
 }
 
 .hero p {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   opacity: 0.95;
+  font-size: 15px;
 }
 
 .panel {
@@ -57,8 +60,8 @@ body {
 
 .panel h2 {
   margin-top: 0;
-  margin-bottom: 12px;
-  font-size: 18px;
+  margin-bottom: 14px;
+  font-size: 20px;
 }
 
 .row {
@@ -86,14 +89,14 @@ body {
 
 .stat-card h3 {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
 }
 
 .stat-card strong {
   display: inline-block;
   margin-top: 8px;
-  font-size: 24px;
+  font-size: 26px;
 }
 
 .stat-card.blue {
@@ -129,8 +132,8 @@ body {
 label {
   display: grid;
   gap: 6px;
-  min-width: 120px;
-  font-size: 13px;
+  min-width: 0;
+  font-size: 14px;
   color: var(--muted);
 }
 
@@ -146,7 +149,7 @@ textarea,
 select {
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 11px 12px;
   color: var(--text);
   background: #fff;
 }
@@ -154,7 +157,7 @@ select {
 button {
   border: none;
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 11px 14px;
   background: var(--primary);
   color: #fff;
   cursor: pointer;
@@ -201,7 +204,7 @@ th {
   background: #f7f9fc;
   color: #4f5c6e;
   text-align: left;
-  font-size: 12px;
+  font-size: 13px;
   border-bottom: 1px solid var(--line);
   padding: 10px;
 }
@@ -209,7 +212,16 @@ th {
 td {
   padding: 10px;
   border-bottom: 1px solid #eff3f8;
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-wrap table {
+  min-width: 860px;
 }
 
 .two-col {
@@ -278,5 +290,38 @@ td {
 @media (max-width: 900px) {
   .two-col {
     grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    font-size: 26px;
+  }
+
+  .container {
+    padding: 16px 12px 36px;
+  }
+
+  .panel {
+    padding: 14px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .row {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .row > * {
+    width: 100%;
+  }
+
+  .table-wrap table {
+    min-width: 720px;
   }
 }
