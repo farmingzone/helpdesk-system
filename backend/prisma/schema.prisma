@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  RECEIVED
+  IN_PROGRESS
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum EventType {
+  CREATED
+  STATUS_CHANGED
+  COMMENT
+  ASSIGNEE_CHANGED
+  OVERDUE_ESCALATED
+}
+
+model Ticket {
+  id            String          @id @default(uuid())
+  title         String
+  description   String
+  requesterName String          @map("requester_name")
+  assigneeName  String?         @map("assignee_name")
+  status        Status          @default(RECEIVED)
+  priority      Priority        @default(MEDIUM)
+  dueAt         DateTime?       @map("due_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  resolvedAt    DateTime?       @map("resolved_at")
+  histories     TicketHistory[]
+  attachments   TicketAttachment[]
+
+  @@index([status, createdAt])
+  @@index([resolvedAt])
+  @@index([priority, dueAt])
+  @@index([assigneeName, status])
+  @@map("tickets")
+}
+
+model TicketHistory {
+  id        String    @id @default(uuid())
+  ticketId  String    @map("ticket_id")
+  actorName String    @map("actor_name")
+  eventType EventType @map("event_type")
+  fromStatus Status?  @map("from_status")
+  toStatus  Status?   @map("to_status")
+  note      String?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_histories")
+}
+
+model TicketAttachment {
+  id             String   @id @default(uuid())
+  ticketId       String   @map("ticket_id")
+  originalName   String   @map("original_name")
+  normalizedName String   @map("normalized_name")
+  mimeType       String   @map("mime_type")
+  sizeBytes      Int      @map("size_bytes")
+  storagePath    String   @map("storage_path")
+  uploadedBy     String   @map("uploaded_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_attachments")
+}
