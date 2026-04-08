@@ -89,7 +89,7 @@ export function DashboardPage() {
   const [createDueAt, setCreateDueAt] = useState("");
 
   const [changeActorName, setChangeActorName] = useState("");
-  const [changeToStatus, setChangeToStatus] = useState<Status>("IN_PROGRESS");
+  const [changeToStatus, setChangeToStatus] = useState<Status>("RECEIVED");
   const [changeNote, setChangeNote] = useState("");
 
   const [commentActorName, setCommentActorName] = useState("");
@@ -162,12 +162,24 @@ export function DashboardPage() {
       setTickets(ticketList);
       setSummary(summaryData);
       if (selectedTicketId) {
-        const [updatedDetail, updatedAttachments] = await Promise.all([
+        const [detailResult, attachmentsResult] = await Promise.allSettled([
           getTicketDetail(selectedTicketId),
           listTicketAttachments(selectedTicketId)
         ]);
-        setDetail(updatedDetail);
-        setAttachments(updatedAttachments);
+
+        if (detailResult.status === "fulfilled") {
+          setDetail(detailResult.value);
+        } else {
+          setDetail(null);
+          throw detailResult.reason;
+        }
+
+        if (attachmentsResult.status === "fulfilled") {
+          setAttachments(attachmentsResult.value);
+        } else {
+          setAttachments([]);
+          setMessage("티켓 상세는 조회되었지만 첨부파일 목록 조회에 실패했습니다.");
+        }
       }
     } catch (err) {
       setMessage(getErrorMessage(err));
@@ -247,13 +259,24 @@ export function DashboardPage() {
   async function onOpenDetail(ticketId: string) {
     try {
       setSelectedTicketId(ticketId);
-      const [data, attachmentList] = await Promise.all([
+      const [detailResult, attachmentsResult] = await Promise.allSettled([
         getTicketDetail(ticketId),
         listTicketAttachments(ticketId)
       ]);
-      setDetail(data);
-      setAttachments(attachmentList);
-      setMessage("");
+
+      if (detailResult.status === "rejected") {
+        throw detailResult.reason;
+      }
+
+      setDetail(detailResult.value);
+
+      if (attachmentsResult.status === "fulfilled") {
+        setAttachments(attachmentsResult.value);
+        setMessage("");
+      } else {
+        setAttachments([]);
+        setMessage("티켓 상세는 조회되었지만 첨부파일 목록 조회에 실패했습니다.");
+      }
     } catch (err) {
       setMessage(getErrorMessage(err));
     }
@@ -435,7 +458,7 @@ export function DashboardPage() {
         </form>
       </section>
 
-      <section className="panel">
+      <section className="panel ticket-list-panel">
         <h2>티켓 목록/검색</h2>
         <div className="filters-grid">
           <label>
@@ -486,7 +509,7 @@ export function DashboardPage() {
         </div>
 
         <div className="table-wrap">
-          <table>
+          <table className="ticket-list-table">
             <thead>
               <tr>
                 <th>티켓</th>
@@ -530,96 +553,6 @@ export function DashboardPage() {
             </tbody>
           </table>
         </div>
-      </section>
-
-      <section className="panel two-col">
-        <div>
-          <h2>상태 변경</h2>
-          <form className="form-grid action-form status-form" onSubmit={onChangeStatus}>
-            <label>
-              티켓
-              <select data-testid="status-ticket-select" value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
-                <option value="">선택하세요</option>
-                {tickets.map((ticket) => (
-                  <option key={ticket.id} value={ticket.id}>
-                    [{ticket.id.slice(0, 8)}] {ticket.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              처리자
-              <input data-testid="status-actor-input" value={changeActorName} onChange={(e) => setChangeActorName(e.target.value)} />
-            </label>
-            <label>
-              변경 상태
-              <select data-testid="status-to-select" value={changeToStatus} onChange={(e) => setChangeToStatus(e.target.value as Status)}>
-                <option value="IN_PROGRESS">처리중</option>
-                <option value="DONE">완료</option>
-              </select>
-            </label>
-            <label className="compact-note">
-              메모
-              <input value={changeNote} onChange={(e) => setChangeNote(e.target.value)} />
-            </label>
-            <button className="form-submit" data-testid="status-submit-button" type="submit" disabled={!selectedTicketId || !changeActorName}>
-              상태 변경 저장
-            </button>
-          </form>
-        </div>
-        <div>
-          <h2>코멘트 추가</h2>
-          <form className="form-grid action-form comment-form" onSubmit={onAddComment}>
-            <label className="compact-primary">
-              작성자
-              <input value={commentActorName} onChange={(e) => setCommentActorName(e.target.value)} />
-            </label>
-            <label className="compact-note">
-              코멘트
-              <textarea value={commentNote} onChange={(e) => setCommentNote(e.target.value)} rows={3} />
-            </label>
-            <button className="form-submit" type="submit" disabled={!selectedTicketId || !commentActorName || !commentNote}>
-              코멘트 등록
-            </button>
-          </form>
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2>담당자 지정/변경</h2>
-        <form className="form-grid action-form assignee-form" onSubmit={onChangeAssignee}>
-          <label>
-            티켓
-            <select data-testid="assignee-ticket-select" value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
-              <option value="">선택하세요</option>
-              {tickets.map((ticket) => (
-                <option key={ticket.id} value={ticket.id}>
-                  [{ticket.id.slice(0, 8)}] {ticket.title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            변경자
-            <input data-testid="assignee-actor-input" value={assigneeActorName} onChange={(e) => setAssigneeActorName(e.target.value)} />
-          </label>
-          <label>
-            담당자명
-            <input
-              data-testid="assignee-name-input"
-              value={toAssigneeName}
-              onChange={(e) => setToAssigneeName(e.target.value)}
-              placeholder="비우면 미배정"
-            />
-          </label>
-          <label className="compact-note">
-            메모
-            <input value={assigneeNote} onChange={(e) => setAssigneeNote(e.target.value)} />
-          </label>
-          <button className="form-submit" data-testid="assignee-submit-button" type="submit" disabled={!selectedTicketId || !assigneeActorName}>
-            담당자 변경 저장
-          </button>
-        </form>
       </section>
 
       <section className="panel">
@@ -709,6 +642,109 @@ export function DashboardPage() {
                 </table>
               </div>
             )}
+            <h3>티켓 처리 액션</h3>
+            <div className="action-accordion">
+              <details className="action-collapse">
+                <summary>상태 변경</summary>
+                <p className="hint">티켓 진행 단계를 바꿀 때 사용합니다. 변경 이력에 남는 운영 메모를 함께 기록하세요.</p>
+                <form className="form-grid action-form status-form" onSubmit={onChangeStatus}>
+                  <label>
+                    티켓
+                    <select data-testid="status-ticket-select" value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
+                      <option value="">선택하세요</option>
+                      {tickets.map((ticket) => (
+                        <option key={ticket.id} value={ticket.id}>
+                          [{ticket.id.slice(0, 8)}] {ticket.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    처리자
+                    <input data-testid="status-actor-input" value={changeActorName} onChange={(e) => setChangeActorName(e.target.value)} />
+                  </label>
+                  <label>
+                    변경 상태
+                    <select data-testid="status-to-select" value={changeToStatus} onChange={(e) => setChangeToStatus(e.target.value as Status)}>
+                      <option value="RECEIVED">접수</option>
+                      <option value="IN_PROGRESS">처리중</option>
+                      <option value="DONE">완료</option>
+                    </select>
+                  </label>
+                  <label className="compact-note">
+                    상태 변경 메모(선택)
+                    <input
+                      value={changeNote}
+                      onChange={(e) => setChangeNote(e.target.value)}
+                      placeholder="예: 고객 확인 후 처리중으로 전환"
+                    />
+                  </label>
+                  <button className="form-submit" data-testid="status-submit-button" type="submit" disabled={!selectedTicketId || !changeActorName}>
+                    상태 변경 저장
+                  </button>
+                </form>
+              </details>
+
+              <details className="action-collapse">
+                <summary>코멘트 추가</summary>
+                <p className="hint">상태는 그대로 두고, 고객 안내/내부 커뮤니케이션 내용을 기록할 때 사용합니다.</p>
+                <form className="form-grid action-form comment-form" onSubmit={onAddComment}>
+                  <label className="compact-primary">
+                    작성자
+                    <input value={commentActorName} onChange={(e) => setCommentActorName(e.target.value)} />
+                  </label>
+                  <label className="compact-note">
+                    코멘트 내용
+                    <textarea
+                      value={commentNote}
+                      onChange={(e) => setCommentNote(e.target.value)}
+                      rows={3}
+                      placeholder="예: 고객에게 로그 파일 재전송 요청"
+                    />
+                  </label>
+                  <button className="form-submit" type="submit" disabled={!selectedTicketId || !commentActorName || !commentNote}>
+                    코멘트 등록
+                  </button>
+                </form>
+              </details>
+
+              <details className="action-collapse">
+                <summary>담당자 지정/변경</summary>
+                <form className="form-grid action-form assignee-form" onSubmit={onChangeAssignee}>
+                  <label>
+                    티켓
+                    <select data-testid="assignee-ticket-select" value={selectedTicketId} onChange={(e) => setSelectedTicketId(e.target.value)}>
+                      <option value="">선택하세요</option>
+                      {tickets.map((ticket) => (
+                        <option key={ticket.id} value={ticket.id}>
+                          [{ticket.id.slice(0, 8)}] {ticket.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    변경자
+                    <input data-testid="assignee-actor-input" value={assigneeActorName} onChange={(e) => setAssigneeActorName(e.target.value)} />
+                  </label>
+                  <label>
+                    담당자명
+                    <input
+                      data-testid="assignee-name-input"
+                      value={toAssigneeName}
+                      onChange={(e) => setToAssigneeName(e.target.value)}
+                      placeholder="비우면 미배정"
+                    />
+                  </label>
+                  <label className="compact-note">
+                    메모
+                    <input value={assigneeNote} onChange={(e) => setAssigneeNote(e.target.value)} />
+                  </label>
+                  <button className="form-submit" data-testid="assignee-submit-button" type="submit" disabled={!selectedTicketId || !assigneeActorName}>
+                    담당자 변경 저장
+                  </button>
+                </form>
+              </details>
+            </div>
           </>
         )}
       </section>

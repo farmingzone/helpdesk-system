@@ -217,41 +217,100 @@ button:disabled {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.filters-grid {
-  display: flex;
-  gap: 12px;
+.ticket-list-panel .filters-grid {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.9fr) minmax(100px, 0.9fr) minmax(102px, 0.85fr) minmax(102px, 0.85fr) minmax(132px, 1.05fr) auto;
+  column-gap: 10px;
+  row-gap: 6px;
   align-items: end;
-  flex-wrap: nowrap;
 }
 
-.filters-grid > label {
-  flex: 1 1 0;
+.ticket-list-panel .filters-grid > label {
+  min-width: 0;
+  min-height: 64px;
 }
 
-.filters-grid > label:nth-child(1),
-.filters-grid > label:nth-child(2) {
-  flex: 0 0 120px;
+.ticket-list-panel .filters-grid .keyword {
+  min-width: 0;
 }
 
-.filters-grid .keyword {
-  flex: 1.2 1 0;
-  min-width: 200px;
+.ticket-list-panel .filters-grid > label:nth-child(3) input,
+.ticket-list-panel .filters-grid > label:nth-child(4) input {
+  width: 88%;
+  justify-self: start;
 }
 
-.filter-submit {
-  min-width: 88px;
+.ticket-list-panel .filters-grid .keyword input {
+  width: 86%;
+  justify-self: start;
 }
 
-.filter-actions {
-  display: flex;
-  gap: 12px;
+.ticket-list-panel .filter-submit {
+  min-width: 64px;
+  height: 40px;
+  padding: 0 14px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.ticket-list-panel .filter-actions {
+  display: inline-grid;
+  grid-template-columns: max-content 64px;
+  gap: 10px;
   align-items: center;
-  margin-left: auto;
-  flex: 0 0 auto;
+  min-height: 64px;
+  justify-content: end;
+  justify-self: end;
+}
+
+.ticket-list-panel .checkbox {
+  height: 40px;
+  align-self: center;
+  font-size: 12px;
+  letter-spacing: -0.1px;
+}
+
+.ticket-list-panel .table-wrap {
+  margin-top: 10px;
+}
+
+.ticket-list-panel .table-wrap .ticket-list-table {
+  min-width: 900px;
+}
+
+.ticket-list-panel .ticket-list-table th {
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 10px 9px;
+}
+
+.ticket-list-panel .ticket-list-table td {
+  font-size: 13px;
+  line-height: 1.35;
+  padding: 9px;
+}
+
+.ticket-list-panel .ticket-list-table td:last-child {
+  vertical-align: middle;
+}
+
+.ticket-list-panel .ticket-list-table td:last-child button {
+  min-width: 34px;
+  height: 30px;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.ticket-list-panel .ticket-list-table .sla-badge {
+  padding: 2px 8px;
+  font-size: 11px;
 }
 
 .action-form {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .action-form .compact-primary {
@@ -266,6 +325,44 @@ button:disabled {
   grid-column: 3;
   justify-self: end;
   align-self: end;
+}
+
+.two-col > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.status-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+}
+
+.status-form label:nth-child(1),
+.status-form .compact-note {
+  grid-column: 1 / -1;
+}
+
+.status-form .form-submit {
+  grid-column: 2;
+}
+
+.comment-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+}
+
+.comment-form .compact-primary,
+.comment-form .compact-note {
+  grid-column: 1 / -1;
+}
+
+.comment-form .compact-note textarea {
+  min-height: 106px;
+  resize: vertical;
+}
+
+.comment-form .form-submit {
+  grid-column: 2;
 }
 
 .checkbox {
@@ -320,6 +417,56 @@ td {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.two-col > .action-pane {
+  min-width: 0;
+}
+
+.two-col > .action-pane + .action-pane {
+  border-left: 1px solid var(--line);
+  padding-left: 16px;
+}
+
+.action-accordion {
+  display: grid;
+  gap: 10px;
+}
+
+.action-collapse {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fbfcff;
+}
+
+.action-collapse > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #2a3a50;
+  list-style: none;
+}
+
+.action-collapse > summary::-webkit-details-marker {
+  display: none;
+}
+
+.action-collapse > summary::after {
+  content: "+";
+  float: right;
+  color: #5e6d83;
+}
+
+.action-collapse[open] > summary::after {
+  content: "-";
+}
+
+.action-collapse > .hint {
+  margin-top: 8px;
+}
+
+.action-collapse .action-form {
+  margin-top: 10px;
 }
 
 .detail-summary {
@@ -384,6 +531,11 @@ td {
     grid-template-columns: 1fr;
   }
 
+  .two-col > .action-pane + .action-pane {
+    border-left: none;
+    padding-left: 0;
+  }
+
   .hero h1 {
     font-size: 26px;
   }
@@ -411,20 +563,33 @@ td {
     grid-template-columns: 1fr;
   }
 
-  .filter-actions {
-    margin-left: 0;
-    flex-wrap: wrap;
-  }
-
-  .filters-grid {
+  .ticket-list-panel .filters-grid {
     display: grid;
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
-  .filters-grid .keyword,
-  .filters-grid > label {
+  .ticket-list-panel .filters-grid .keyword,
+  .ticket-list-panel .filters-grid > label {
     min-width: 0;
-    flex: 1 1 auto;
+    min-height: auto;
+  }
+
+  .ticket-list-panel .filters-grid > label:nth-child(3) input,
+  .ticket-list-panel .filters-grid > label:nth-child(4) input,
+  .ticket-list-panel .filters-grid .keyword input {
+    width: 100%;
+  }
+
+  .ticket-list-panel .filter-actions {
+    width: 100%;
+    grid-template-columns: 1fr 64px;
+    justify-content: start;
+    justify-self: stretch;
+  }
+
+  .ticket-list-panel .filter-submit {
+    justify-self: end;
   }
 
   .row {
@@ -447,32 +612,40 @@ td {
     justify-self: start;
   }
 
+  .status-form,
+  .comment-form {
+    grid-template-columns: 1fr;
+  }
+
   .table-wrap table {
+    min-width: 720px;
+  }
+
+  .ticket-list-panel .table-wrap .ticket-list-table {
     min-width: 720px;
   }
 }
 
 @media (min-width: 901px) and (max-width: 1200px) {
-  .filters-grid {
+  .ticket-list-panel .filters-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 12px;
   }
 
-  .filters-grid > label {
-    flex: 1 1 auto;
+  .ticket-list-panel .filters-grid > label {
     min-width: 0;
-    grid-column: span 2;
+    min-height: 64px;
+    grid-column: span 1;
   }
 
-  .filters-grid .keyword {
+  .ticket-list-panel .filters-grid .keyword {
     grid-column: span 2;
     min-width: 0;
   }
 
-  .filter-actions {
+  .ticket-list-panel .filter-actions {
     grid-column: span 2;
-    margin-left: 0;
     justify-self: end;
   }
 }

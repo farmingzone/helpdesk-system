@@ -267,10 +267,18 @@ export async function createTicketAttachment(input: CreateTicketAttachmentInput)
 }
 
 export async function listTicketAttachments(ticketId: string) {
-  return prisma.ticketAttachment.findMany({
-    where: { ticketId },
-    orderBy: { createdAt: "desc" }
-  });
+  try {
+    return await prisma.ticketAttachment.findMany({
+      where: { ticketId },
+      orderBy: { createdAt: "desc" }
+    });
+  } catch (error) {
+    // Backward compatibility: old DBs may not have ticket_attachments yet.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+      return [];
+    }
+    throw error;
+  }
 }
 
 export async function findTicketAttachment(ticketId: string, attachmentId: string) {

@@ -1,9 +1,10 @@
 import { prisma } from "./db/client";
 import { app } from "./app";
 const port = Number(process.env.PORT ?? 3000);
+const host = process.env.HOST ?? "127.0.0.1";
 
-const server = app.listen(port, () => {
-  console.log(`Helpdesk backend listening on port ${port}`);
+const server = app.listen(port, host, () => {
+  console.log(`Helpdesk backend listening on http://${host}:${port}`);
 });
 
 async function gracefulShutdown() {
